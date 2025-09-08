@@ -1,4 +1,4 @@
-import { APP_NAME, SETTINGS_NAMES, SettingsFilesToSync } from "./types";
+import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync } from "./types";
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -71,60 +71,73 @@ export async function filesEqualByHash(aPath: string, bPath: string): Promise<bo
   }
 }
 
+
 /**
  * Normalizes an array of file pairs to sync by resolving their paths.
  * Normalization means: if a path is relative, it will be resolved against the
- * workspace folders.
+ * config file location.
  * @param files Array of file pairs to sync
- * @param workspaceFolders Workspace folders to resolve relative paths against
+ * @param configFileUri The URI of the config file (or workspace file)
  * @returns Normalized array of file pairs
  */
- 
 export function normalizeFilesToSync(
   files: SettingsFilesToSync,
-   workspaceFileBaseUri: vscode.Uri
+  configFileUri: vscode.Uri
 ): SettingsFilesToSync {
   const normalized: SettingsFilesToSync = [];
   for (const [a, b] of files) {
-    const ra = getAbsoluteFilePath(a, workspaceFileBaseUri) || a;
-    const rb = getAbsoluteFilePath(b, workspaceFileBaseUri) || b;
+    const ra = getAbsoluteFilePath(a, configFileUri);
+    const rb = getAbsoluteFilePath(b, configFileUri);
+    if (!ra || !rb) {
+      // Skip invalid entries
+      continue;
+    }
     normalized.push([ra, rb]);
   }
   return normalized;
 }
 
 
-
+/**
+ * Gets the absolute file path for a given relative path and config file URI.
+ * @param filePath The relative file path
+ * @param configFileUri The URI of the config file
+ * @returns The absolute file path, or null if it cannot be resolved
+ */
 function getAbsoluteFilePath(
   filePath: string,
   configFileUri: vscode.Uri
 ): string | null {
+
+  if (!filePath || !configFileUri) {
+    return null;
+  }
   // If path is absolute, return as-is
   if (filePath && (filePath.startsWith('/') || filePath.match(/^[A-Za-z]:\\/))) {
     return filePath;
   }
 
-  // If a workspace file (.code-workspace) is present, resolve relative to its directory first
-  if (configFileUri) {
-    try {
-      const baseDir = path.dirname(configFileUri.fsPath);
-      const baseUri = vscode.Uri.file(baseDir);
-      const resolved = vscode.Uri.joinPath(baseUri, filePath).fsPath;
-      if (fs.existsSync(resolved)) {
-        return resolved;
-      }
-      // If it doesn't exist, still return the resolved path against workspace file dir
+  try {
+    const baseDir = path.dirname(configFileUri.fsPath);
+    const baseUri = vscode.Uri.file(baseDir);
+    const resolved = vscode.Uri.joinPath(baseUri, filePath).fsPath;
+    if (fs.existsSync(resolved)) {
       return resolved;
-    } catch (err) {
-      // ignore and continue to fallback
     }
+    return null;
+  } catch (err) {
+    // ignore and continue to fallback
+    return null;
   }
-
- 
-  // No workspace to resolve against
-  return null;
 }
 
+
+
+/**
+ * Gets the list of files to sync from the workspace settings. The file paths
+ * are normalized against the workspace file location.
+ * @returns The list of files to sync from the workspace settings, or null if none found.
+ */
 export async function getFilesToSyncFromWorkspaceSettings(): Promise<SettingsFilesToSync | null> {
   const filesToSyncFromWorkspace: SettingsFilesToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.filesToSync) || [];
 
@@ -140,4 +153,41 @@ export async function getFilesToSyncFromWorkspaceSettings(): Promise<SettingsFil
   }
 
   return null;
+}
+
+/**
+ * Gets the list of files to sync from the configuration files. FilePaths are
+ * normalized against the config file location.
+ * @param output Output channel for logging
+ * @returns A promise that resolves to the list of files to sync, or null if none found
+ */
+export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel): Promise<SettingsFilesToSync | null> {
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+
+  if (!workspaceFolders || workspaceFolders.length === 0) {
+    // No workspace folders
+    return null;
+  }
+  const configFileName = DEFAULT_CONFIG_FILE_NAME;
+  const normalizedFilesToSync: SettingsFilesToSync = [];
+
+  for (const folder of workspaceFolders) {
+    const folderUri = folder.uri;
+    const fileUri = vscode.Uri.joinPath(folderUri, configFileName);
+
+    try {
+      const jsonFileData = await vscode.workspace.fs.readFile(fileUri);
+      const fileData = JSON.parse(jsonFileData.toString());
+
+      if (Array.isArray(fileData.filesToSync)) {
+        // normalize and add to allFilesToSync
+        normalizedFilesToSync.push(...normalizeFilesToSync(fileData.filesToSync, fileUri));
+      }
+
+    } catch (err) {
+      output.appendLine(`Error reading ${configFileName} in folder ${folder.name}: ${err}`);
+    }
+  };
+  return normalizedFilesToSync;
+
 }

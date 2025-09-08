@@ -35,7 +35,6 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
-exports.getFilesToSyncFromConfigFiles = getFilesToSyncFromConfigFiles;
 const vscode = __importStar(require("vscode"));
 const types_1 = require("./types");
 const helpers_1 = require("./helpers");
@@ -47,6 +46,7 @@ async function activate(context) {
     context.subscriptions.push(output);
     // Run startup tasks immediately when extension activates
     await runStartupTasks(output);
+    // Listen for file save events
     const saveListener = vscode.workspace.onDidSaveTextDocument((document) => (0, helpers_1.handleOnDidSaveTextDocument)(document, output, allFilesToSync));
     context.subscriptions.push(saveListener);
     // Register the command as before
@@ -58,39 +58,9 @@ async function activate(context) {
 }
 // This method is called when your extension is deactivated
 function deactivate() { }
-async function getFilesToSyncFromConfigFiles(output) {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    const configFileName = types_1.DEFAULT_CONFIG_FILE_NAME;
-    const normalizedFilesToSync = [];
-    if (workspaceFolders && workspaceFolders.length > 0) {
-        for (const folder of workspaceFolders) {
-            const folderUri = folder.uri;
-            const fileUri = vscode.Uri.joinPath(folderUri, configFileName);
-            try {
-                const jsonFileData = await vscode.workspace.fs.readFile(fileUri);
-                const fileData = JSON.parse(jsonFileData.toString());
-                let filesToSync = [];
-                if (Array.isArray(fileData.filesToSync)) {
-                    filesToSync = fileData.filesToSync;
-                }
-                // normalize and add to allFilesToSync
-                normalizedFilesToSync.push(...(0, helpers_1.normalizeFilesToSync)(fileData.filesToSync, fileUri));
-            }
-            catch (err) {
-                output.appendLine(`Error reading ${configFileName} in folder ${folder.name}: ${err}`);
-            }
-        }
-        ;
-        return normalizedFilesToSync;
-    }
-    else {
-        output.appendLine('No workspace folder open');
-        return null;
-    }
-}
 async function runStartupTasks(output) {
     allFilesToSync = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)() || [];
-    const filesFromConfig = await getFilesToSyncFromConfigFiles(output);
+    const filesFromConfig = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
     if (filesFromConfig) {
         allFilesToSync.push(...filesFromConfig);
     }
