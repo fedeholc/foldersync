@@ -38,7 +38,10 @@ exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const types_1 = require("./types");
 const helpers_1 = require("./helpers");
+const panel_1 = require("./panel");
+const syncTree_1 = require("./syncTree");
 let allFilesToSync = [];
+let syncTreeProvider = null;
 async function activate(context) {
     // Use an OutputChannel for non-intrusive logging
     const output = vscode.window.createOutputChannel(types_1.APP_NAME);
@@ -46,15 +49,43 @@ async function activate(context) {
     context.subscriptions.push(output);
     // Run startup tasks immediately when extension activates
     await runStartupTasks(output);
-    // Listen for file save events
-    const saveListener = vscode.workspace.onDidSaveTextDocument((document) => (0, helpers_1.handleOnDidSaveTextDocument)(document, output, allFilesToSync));
+    // Register tree view provider in the explorer view
+    syncTreeProvider = new syncTree_1.SyncTreeProvider(allFilesToSync);
+    context.subscriptions.push(vscode.window.registerTreeDataProvider('filesync.syncView', syncTreeProvider));
+    // Register command to refresh the tree view
+    context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => syncTreeProvider?.refresh()));
+    // Register command to reveal the tree view
+    context.subscriptions.push(vscode.commands.registerCommand('filesync.revealView', async () => {
+        await vscode.commands.executeCommand('workbench.view.explorer');
+        // optionally focus selection
+    }));
+    // Listen for file save events and update panel when appropriate
+    const saveListener = vscode.workspace.onDidSaveTextDocument(async (document) => {
+        await (0, helpers_1.handleOnDidSaveTextDocument)(document, output, allFilesToSync);
+        if (panel_1.SyncPanel.currentPanel) {
+            panel_1.SyncPanel.currentPanel.update(allFilesToSync);
+        }
+        // Update tree provider when files change
+        syncTreeProvider?.setPairs(allFilesToSync);
+    });
     context.subscriptions.push(saveListener);
-    // Register the command as before
+    // Register existing helloWorld command
     const disposable = vscode.commands.registerCommand('filesync.helloWorld', async () => {
         vscode.window.showInformationMessage('Hello World from filesync!');
-        //runStartupTasks(output);
     });
     context.subscriptions.push(disposable);
+    // Register command to show the sync panel
+    const panelDisposable = vscode.commands.registerCommand('filesync.showSyncPanel', async () => {
+        const panel = panel_1.SyncPanel.createOrShow(context);
+        panel.update(allFilesToSync);
+    });
+    context.subscriptions.push(panelDisposable);
+    // If the panel is open, update it with current data
+    if (panel_1.SyncPanel.currentPanel) {
+        panel_1.SyncPanel.currentPanel.update(allFilesToSync);
+    }
+    // Update tree provider after startup tasks resolved
+    syncTreeProvider?.setPairs(allFilesToSync);
 }
 // This method is called when your extension is deactivated
 function deactivate() { }

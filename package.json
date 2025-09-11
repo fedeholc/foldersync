@@ -21,8 +21,38 @@
       {
         "command": "filesync.helloWorld",
         "title": "filesync Hello World"
+      },
+      {
+        "command": "filesync.showSyncPanel",
+        "title": "File Sync: Show Sync Panel"
+      },
+      {
+        "command": "filesync.refreshView",
+        "title": "File Sync: Refresh View"
+      },
+      {
+        "command": "filesync.revealView",
+        "title": "File Sync: Reveal View"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "filesync_container",
+          "title": "File Sync",
+          "icon": "resources/icons/filesync.svg"
+        }
+      ]
+    },
+    "views": {
+      "filesync_container": [
+        {
+          "id": "filesync.syncView",
+          "name": "File Sync",
+          "icon": "resources/icons/filesync.svg"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
