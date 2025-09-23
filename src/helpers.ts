@@ -175,10 +175,15 @@ export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel
     const folderUri = folder.uri;
     const fileUri = vscode.Uri.joinPath(folderUri, configFileName);
 
+    const fileExists = await checkFileExists(fileUri);
+    if (!fileExists) {
+      output.appendLine(`No ${configFileName} found in folder ${folder.name}`);
+      continue;
+    }
     try {
       const jsonFileData = await vscode.workspace.fs.readFile(fileUri);
 
-      output.appendLine(`Read ${configFileName} in folder ${folder.name}`);
+      output.appendLine(`filesync config file found in folder ${folder.name}`);
       output.appendLine(`Content: ${jsonFileData.toString()}`);
 
       const fileData = JSON.parse(jsonFileData.toString());
@@ -194,4 +199,13 @@ export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel
   };
   return normalizedFilesToSync;
 
+}
+
+async function checkFileExists(uri: vscode.Uri): Promise<boolean> {
+  try {
+    await vscode.workspace.fs.stat(uri);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
