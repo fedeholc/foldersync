@@ -177,6 +177,10 @@ export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel
 
     try {
       const jsonFileData = await vscode.workspace.fs.readFile(fileUri);
+
+      output.appendLine(`Read ${configFileName} in folder ${folder.name}`);
+      output.appendLine(`Content: ${jsonFileData.toString()}`);
+
       const fileData = JSON.parse(jsonFileData.toString());
 
       if (Array.isArray(fileData.filesToSync)) {

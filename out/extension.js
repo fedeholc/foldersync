@@ -90,6 +90,7 @@ async function activate(context) {
 // This method is called when your extension is deactivated
 function deactivate() { }
 async function runStartupTasks(output) {
+    output.appendLine('Running startup tasks...');
     allFilesToSync = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)() || [];
     const filesFromConfig = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
     if (filesFromConfig) {
