@@ -18,9 +18,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Run startup tasks immediately when extension activates
 	await runStartupTasks(output);
 
-	// Register tree view provider in the explorer view
+	// Register tree view provider and create a TreeView so we can react to visibility changes
 	syncTreeProvider = new SyncTreeProvider(allFilesToSync);
-	context.subscriptions.push(vscode.window.registerTreeDataProvider('filesync.syncView', syncTreeProvider));
+	const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: syncTreeProvider });
+	context.subscriptions.push(treeView);
 
 	// Register command to refresh the tree view
 	context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => syncTreeProvider?.refresh()));
@@ -30,6 +31,15 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vscode.commands.executeCommand('workbench.view.explorer');
 		// optionally focus selection
 	}));
+
+	// When the tree view becomes visible (user clicks the Activity Bar icon), open the webview panel as well
+	const visibilityDisposable = treeView.onDidChangeVisibility((e) => {
+		if (e.visible) {
+			const panel = SyncPanel.createOrShow(context);
+			panel.update(allFilesToSync);
+		}
+	});
+	context.subscriptions.push(visibilityDisposable);
 
 	// Listen for file save events and update panel when appropriate
 	const saveListener = vscode.workspace.onDidSaveTextDocument(async (document) => {

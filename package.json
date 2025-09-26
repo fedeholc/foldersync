@@ -53,6 +53,18 @@
         }
       ]
     }
+    ,
+    "view/item/context": {},
+    "menus": {
+      "view/title": [
+        {
+          "command": "filesync.showSyncPanel",
+          "when": "view == filesync.syncView",
+          "group": "navigation",
+          "title": "Open Sync Panel"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
