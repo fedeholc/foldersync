@@ -52,8 +52,7 @@
           "icon": "resources/icons/filesync.svg"
         }
       ]
-    }
-    ,
+    },
     "view/item/context": {},
     "menus": {
       "view/title": [
