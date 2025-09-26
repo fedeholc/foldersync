@@ -35,8 +35,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	// When the tree view becomes visible (user clicks the Activity Bar icon), open the webview panel as well
 	const visibilityDisposable = treeView.onDidChangeVisibility((e) => {
 		if (e.visible) {
-			const panel = SyncPanel.createOrShow(context);
-			panel.update(allFilesToSync);
+			const syncPanel = SyncPanel.createOrShow(context);
+			syncPanel.update(allFilesToSync);
 		}
 	});
 	context.subscriptions.push(visibilityDisposable);
@@ -60,8 +60,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Register command to show the sync panel
 	const panelDisposable = vscode.commands.registerCommand('filesync.showSyncPanel', async () => {
-		const panel = SyncPanel.createOrShow(context);
-		panel.update(allFilesToSync);
+		const syncPanel = SyncPanel.createOrShow(context);
+		syncPanel.update(allFilesToSync);
 	});
 	context.subscriptions.push(panelDisposable);
 
