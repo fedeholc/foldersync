@@ -1,4 +1,4 @@
-import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync } from "./types";
+import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync, SettingsFoldersToSync } from "./types";
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -97,6 +97,22 @@ export function normalizeFilesToSync(
   return normalized;
 }
 
+export function normalizeFoldersToSync(
+  folders: SettingsFoldersToSync,
+  configFileUri: vscode.Uri
+): SettingsFoldersToSync {
+  const normalized: SettingsFoldersToSync = [];
+  for (const [a, b] of folders) {
+    const ra = getAbsoluteFilePath(a, configFileUri);
+    const rb = getAbsoluteFilePath(b, configFileUri);
+    if (!ra || !rb) {
+      // Skip invalid entries
+      continue;
+    }
+    normalized.push([ra, rb]);
+  }
+  return normalized;
+}
 
 /**
  * Gets the absolute file path for a given relative path and config file URI.
@@ -138,11 +154,32 @@ function getAbsoluteFilePath(
  * are normalized against the workspace file location.
  * @returns The list of files to sync from the workspace settings, or null if none found.
  */
-export async function getFilesToSyncFromWorkspaceSettings(): Promise<SettingsFilesToSync | null> {
+export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputChannel): Promise<SettingsFilesToSync | null> {
+
+  output.appendLine('Retrieving files to sync from workspace settings');
+
+  if (!vscode.workspace.workspaceFile) {
+    output.appendLine('No workspace file found. Skipping workspace settings.');
+    return null;
+  }
+
   const filesToSyncFromWorkspace: SettingsFilesToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.filesToSync) || [];
+
+  output.appendLine(`Files to sync from workspace settings: ${JSON.stringify(filesToSyncFromWorkspace)}`);
+
+  const foldersToSyncFromWorkspace: SettingsFoldersToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.foldersToSync) || [];
+
+  output.appendLine(`Folders to sync from workspace settings: ${JSON.stringify(foldersToSyncFromWorkspace)}`);
 
   const workspaceFileUri = vscode.workspace.workspaceFile;
 
+  if (workspaceFileUri) {
+    const normalizedFolders = normalizeFoldersToSync(
+      foldersToSyncFromWorkspace,
+      workspaceFileUri
+    );
+    output.appendLine(`Normalized folders to sync: ${JSON.stringify(normalizedFolders)}`);
+  }
   // normalize files 
   if (workspaceFileUri) {
     const normalizedFiles = normalizeFilesToSync(

@@ -100,7 +100,7 @@ async function activate(context) {
 function deactivate() { }
 async function runStartupTasks(output) {
     output.appendLine('Running startup tasks...');
-    allFilesToSync = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)() || [];
+    allFilesToSync = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output) || [];
     const filesFromConfig = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
     if (filesFromConfig) {
         allFilesToSync.push(...filesFromConfig);

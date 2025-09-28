@@ -81,7 +81,7 @@ export function deactivate() { }
 async function runStartupTasks(output: vscode.OutputChannel) {
 
 	output.appendLine('Running startup tasks...');
-	allFilesToSync = await getFilesToSyncFromWorkspaceSettings() || [];
+	allFilesToSync = await getFilesToSyncFromWorkspaceSettings(output) || [];
 
 	const filesFromConfig = await getFilesToSyncFromConfigFiles(output);
 	if (filesFromConfig) {
