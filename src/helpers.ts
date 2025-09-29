@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
-
+ 
 export async function handleOnDidSaveTextDocument(document: vscode.TextDocument, output: vscode.OutputChannel, allFilesToSync: SettingsFilesToSync) {
 
   const documentPath = document.uri.fsPath;
@@ -173,23 +173,64 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
 
   const workspaceFileUri = vscode.workspace.workspaceFile;
 
+  const normalizedFilesToSync: SettingsFilesToSync = [];
   if (workspaceFileUri) {
     const normalizedFolders = normalizeFoldersToSync(
       foldersToSyncFromWorkspace,
       workspaceFileUri
     );
     output.appendLine(`Normalized folders to sync: ${JSON.stringify(normalizedFolders)}`);
+    // For each folder pair, read files and add to filesToSyncFromWorkspace
+    for (const [folderA, folderB] of normalizedFolders) {
+      try {
+        const filesInA = await fs.promises.readdir(folderA);
+        for (const fileName of filesInA) {
+          const fileAPath = path.join(folderA, fileName);
+          const fileBPath = path.join(folderB, fileName);
+          // Check if it's a file (not a directory)
+          const stat = await fs.promises.stat(fileAPath);
+          if (stat.isFile()) {
+            normalizedFilesToSync.push([fileAPath, fileBPath]);
+          }
+        }
+        const filesInB = await fs.promises.readdir(folderB);
+        for (const fileName of filesInB) {
+          const fileAPath = path.join(folderA, fileName);
+          const fileBPath = path.join(folderB, fileName);
+          // Check if it's a file (not a directory)
+          const stat = await fs.promises.stat(fileBPath);
+          if (stat.isFile()) {
+            // if not already added from folderA, add it
+            if (!normalizedFilesToSync.find(pair => pair[0] === fileAPath && pair[1] === fileBPath)) {
+              normalizedFilesToSync.push([fileAPath, fileBPath]);
+            }
+          }
+
+        }
+      } catch (err) {
+        output.appendLine(`Error reading folder ${folderA}: ${err}`);
+      }
+    }
   }
+
+
   // normalize files 
   if (workspaceFileUri) {
     const normalizedFiles = normalizeFilesToSync(
       filesToSyncFromWorkspace,
       workspaceFileUri
     );
-    return normalizedFiles;
+    output.appendLine(`files to sync from workspace: ${JSON.stringify(normalizedFiles)}`);
+    for (const pair of normalizedFiles) {
+      // Avoid duplicates
+      if (!normalizedFilesToSync.find(p => p[0] === pair[0] && p[1] === pair[1])) {
+        normalizedFilesToSync.push(pair);
+      }
+    }
   }
 
-  return null;
+  output.appendLine(`Normalized files to sync: ${JSON.stringify(normalizedFilesToSync)}`);
+  return normalizedFilesToSync.length > 0 ? normalizedFilesToSync : null;
 }
 
 /**

@@ -52,11 +52,43 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 	context.subscriptions.push(saveListener);
 
-	// Register existing helloWorld command
-	const disposable = vscode.commands.registerCommand('filesync.helloWorld', async () => {
-		vscode.window.showInformationMessage('Hello World from filesync!');
+	const saveNewFileListener = vscode.workspace.onDidCreateFiles(async (event) => {
+		// Check if any of the created files is a config file
+		if (event.files.some(file => file.path.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || file.path.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`))) {
+			output.appendLine('Detected creation of a new config file. Re-running startup tasks...');
+			await runStartupTasks(output);
+			if (SyncPanel.currentPanel) {
+				SyncPanel.currentPanel.update(allFilesToSync);
+			}
+			// Update tree provider when files change
+			syncTreeProvider?.setPairs(allFilesToSync);
+		}
+
+		// Check if any of the created files is a workspace settings file
+		if (event.files.some(file => file.path.endsWith('.code-workspace'))) {
+			output.appendLine('Detected creation of a new workspace settings file. Re-running startup tasks...');
+			await runStartupTasks(output);
+			if (SyncPanel.currentPanel) {
+				SyncPanel.currentPanel.update(allFilesToSync);
+			}
+			// Update tree provider when files change
+			syncTreeProvider?.setPairs(allFilesToSync);
+		}
+
+		// check if any of the created files is in a folder that is being synced
+		const foldersToSync = allFilesToSync.map(pair => pair[0].substring(0, pair[0].lastIndexOf('/')));
+		if (event.files.some(file => foldersToSync.some(folder => file.path.startsWith(folder)))) {
+			output.appendLine('Detected creation of a new file in a synced folder. Re-running startup tasks...');
+			await runStartupTasks(output);
+			if (SyncPanel.currentPanel) {
+				SyncPanel.currentPanel.update(allFilesToSync);
+			}
+			// Update tree provider when files change
+			syncTreeProvider?.setPairs(allFilesToSync);
+		}
 	});
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(saveNewFileListener);
+
 
 	// Register command to show the sync panel
 	const panelDisposable = vscode.commands.registerCommand('filesync.showSyncPanel', async () => {
@@ -78,7 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() { }
 
 
-async function runStartupTasks(output: vscode.OutputChannel) {
+export async function runStartupTasks(output: vscode.OutputChannel) {
 
 	output.appendLine('Running startup tasks...');
 	allFilesToSync = await getFilesToSyncFromWorkspaceSettings(output) || [];
