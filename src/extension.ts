@@ -1,17 +1,17 @@
 import * as fs from 'node:fs';
 import * as vscode from 'vscode';
 import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync } from './types';
-import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, handleOnDidSaveTextDocument, normalizeFilesToSync } from './helpers';
+import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, handleDidCreateFiles, handleOnDidSaveTextDocument, normalizeFilesToSync } from './helpers';
 import { SyncPanel } from './panel';
 import { SyncTreeProvider } from './syncTree';
 
-let allFilesToSync: SettingsFilesToSync = [];
-let syncTreeProvider: SyncTreeProvider | null = null;
+export let allFilesToSync: SettingsFilesToSync = [];
+export let syncTreeProvider: SyncTreeProvider | null = null;
 
+export const output = vscode.window.createOutputChannel(APP_NAME);
 
 export async function activate(context: vscode.ExtensionContext) {
 	// Use an OutputChannel for non-intrusive logging
-	const output = vscode.window.createOutputChannel(APP_NAME);
 	output.appendLine('filesync extension activated');
 	context.subscriptions.push(output);
 
@@ -52,41 +52,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 	context.subscriptions.push(saveListener);
 
-	const saveNewFileListener = vscode.workspace.onDidCreateFiles(async (event) => {
-		// Check if any of the created files is a config file
-		if (event.files.some(file => file.path.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || file.path.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`))) {
-			output.appendLine('Detected creation of a new config file. Re-running startup tasks...');
-			await runStartupTasks(output);
-			if (SyncPanel.currentPanel) {
-				SyncPanel.currentPanel.update(allFilesToSync);
-			}
-			// Update tree provider when files change
-			syncTreeProvider?.setPairs(allFilesToSync);
-		}
-
-		// Check if any of the created files is a workspace settings file
-		if (event.files.some(file => file.path.endsWith('.code-workspace'))) {
-			output.appendLine('Detected creation of a new workspace settings file. Re-running startup tasks...');
-			await runStartupTasks(output);
-			if (SyncPanel.currentPanel) {
-				SyncPanel.currentPanel.update(allFilesToSync);
-			}
-			// Update tree provider when files change
-			syncTreeProvider?.setPairs(allFilesToSync);
-		}
-
-		// check if any of the created files is in a folder that is being synced
-		const foldersToSync = allFilesToSync.map(pair => pair[0].substring(0, pair[0].lastIndexOf('/')));
-		if (event.files.some(file => foldersToSync.some(folder => file.path.startsWith(folder)))) {
-			output.appendLine('Detected creation of a new file in a synced folder. Re-running startup tasks...');
-			await runStartupTasks(output);
-			if (SyncPanel.currentPanel) {
-				SyncPanel.currentPanel.update(allFilesToSync);
-			}
-			// Update tree provider when files change
-			syncTreeProvider?.setPairs(allFilesToSync);
-		}
-	});
+	const saveNewFileListener = vscode.workspace.onDidCreateFiles(handleDidCreateFiles);
 	context.subscriptions.push(saveNewFileListener);
 
 
