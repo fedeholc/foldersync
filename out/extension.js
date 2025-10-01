@@ -54,6 +54,7 @@ async function activate(context) {
     // Run startup tasks immediately when extension activates
     await runStartupTasks(exports.output);
     // Register tree view provider and create a TreeView so we can react to visibility changes
+    //syncTreeProvider = new SyncTreeProvider(allFilesToSync);
     exports.syncTreeProvider = new syncTree_1.SyncTreeProvider(exports.allFilesToSync);
     const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: exports.syncTreeProvider });
     context.subscriptions.push(treeView);

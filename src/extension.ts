@@ -21,7 +21,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	await runStartupTasks(output);
 
 	// Register tree view provider and create a TreeView so we can react to visibility changes
+	//syncTreeProvider = new SyncTreeProvider(allFilesToSync);
 	syncTreeProvider = new SyncTreeProvider(allFilesToSync);
+	
 	const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: syncTreeProvider });
 	context.subscriptions.push(treeView);
 
