@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { fsTree, fsTreeElement } from './extension';
 
 export type SyncPair = { a: string; b: string };
 
@@ -9,6 +10,18 @@ export class SyncTreeItem extends vscode.TreeItem {
     this.contextValue = 'syncPair';
     this.resourceUri = vscode.Uri.file(pair.a);
     this.iconPath = new vscode.ThemeIcon('file-symlink-file');
+  }
+}
+
+class fsTreeItem extends vscode.TreeItem {
+  constructor(public readonly item: fsTreeElement) {
+    super(
+      item.name,
+      item.type === "container"
+        ? vscode.TreeItemCollapsibleState.Collapsed
+        : vscode.TreeItemCollapsibleState.None
+    );
+    this.contextValue = item.type;
   }
 }
 
@@ -40,5 +53,26 @@ export class SyncTreeProvider implements vscode.TreeDataProvider<SyncTreeItem> {
       return Promise.resolve([]);
     }
     return Promise.resolve(this._pairs.map((p) => new SyncTreeItem(p)));
+  }
+}
+
+export class FsTreeProvider implements vscode.TreeDataProvider<fsTreeItem> {
+  getTreeItem(element: fsTreeItem): vscode.TreeItem {
+    return element;
+  }
+
+  getChildren(element?: fsTreeItem): Thenable<fsTreeItem[]> {
+    if (!element) {
+      // Elementos raíz (folders)
+      return Promise.resolve(fsTree.map((d) => new fsTreeItem(d)));
+    }
+    if (element.item.type === "container" && element.item.children) {
+      // Hijos de la carpeta
+      return Promise.resolve(
+        element.item.children.map((child) => new fsTreeItem(child))
+      );
+    }
+    // Los archivos no tienen hijos
+    return Promise.resolve([]);
   }
 }

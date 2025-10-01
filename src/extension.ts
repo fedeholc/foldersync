@@ -3,11 +3,12 @@ import * as vscode from 'vscode';
 import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync } from './types';
 import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, handleDidCreateFiles, handleOnDidSaveTextDocument, normalizeFilesToSync } from './helpers';
 import { SyncPanel } from './panel';
-import { SyncTreeProvider } from './syncTree';
+import {FsTreeProvider, SyncTreeProvider } from './syncTree';
 
 export let allFilesToSync: SettingsFilesToSync = [];
 export let syncTreeProvider: SyncTreeProvider | null = null;
 export let fsTree: fsTreeElement[] = [];
+export let fsTreeProvider: FsTreeProvider | null = null;
 
 export const output = vscode.window.createOutputChannel(APP_NAME);
 

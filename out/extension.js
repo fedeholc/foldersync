@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.output = exports.fsTree = exports.syncTreeProvider = exports.allFilesToSync = void 0;
+exports.output = exports.fsTreeProvider = exports.fsTree = exports.syncTreeProvider = exports.allFilesToSync = void 0;
 exports.activate = activate;
 exports.deactivate = deactivate;
 exports.runStartupTasks = runStartupTasks;
@@ -45,6 +45,7 @@ const syncTree_1 = require("./syncTree");
 exports.allFilesToSync = [];
 exports.syncTreeProvider = null;
 exports.fsTree = [];
+exports.fsTreeProvider = null;
 exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
 async function activate(context) {
     // Use an OutputChannel for non-intrusive logging
