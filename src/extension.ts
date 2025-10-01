@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync } from './types';
 import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, handleDidCreateFiles, handleOnDidSaveTextDocument, normalizeFilesToSync } from './helpers';
 import { SyncPanel } from './panel';
-import {FsTreeProvider, SyncTreeProvider } from './syncTree';
+import { FsTreeProvider, SyncTreeProvider } from './syncTree';
 
 export let allFilesToSync: SettingsFilesToSync = [];
 export let syncTreeProvider: SyncTreeProvider | null = null;
@@ -22,13 +22,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Register tree view provider and create a TreeView so we can react to visibility changes
 	//syncTreeProvider = new SyncTreeProvider(allFilesToSync);
-	syncTreeProvider = new SyncTreeProvider(allFilesToSync);
-	
-	const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: syncTreeProvider });
+	fsTreeProvider = new FsTreeProvider(fsTree);
+	const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: fsTreeProvider });
 	context.subscriptions.push(treeView);
 
 	// Register command to refresh the tree view
-	context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => syncTreeProvider?.refresh()));
+	context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => fsTreeProvider?.refresh()));
 
 	// Register command to reveal the tree view
 	context.subscriptions.push(vscode.commands.registerCommand('filesync.revealView', async () => {
@@ -53,6 +52,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 		// Update tree provider when files change
 		syncTreeProvider?.setPairs(allFilesToSync);
+		fsTreeProvider?.setTree(fsTree);
 	});
 	context.subscriptions.push(saveListener);
 
@@ -74,6 +74,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Update tree provider after startup tasks resolved
 	syncTreeProvider?.setPairs(allFilesToSync);
+	fsTreeProvider?.setTree(fsTree);
+	output.appendLine(`fsTree	post task: ${JSON.stringify(fsTree)}`);
 }
 
 // This method is called when your extension is deactivated
@@ -83,7 +85,7 @@ export function deactivate() { }
 export async function runStartupTasks(output: vscode.OutputChannel) {
 
 	output.appendLine('Running startup tasks...');
-	let { allFilesToSync, fsTree } = await getFilesToSyncFromWorkspaceSettings(output);
+	({ allFilesToSync, fsTree } = await getFilesToSyncFromWorkspaceSettings(output));
 
 	output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(fsTree)}`);
 

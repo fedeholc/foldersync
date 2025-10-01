@@ -55,11 +55,11 @@ async function activate(context) {
     await runStartupTasks(exports.output);
     // Register tree view provider and create a TreeView so we can react to visibility changes
     //syncTreeProvider = new SyncTreeProvider(allFilesToSync);
-    exports.syncTreeProvider = new syncTree_1.SyncTreeProvider(exports.allFilesToSync);
-    const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: exports.syncTreeProvider });
+    exports.fsTreeProvider = new syncTree_1.FsTreeProvider(exports.fsTree);
+    const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: exports.fsTreeProvider });
     context.subscriptions.push(treeView);
     // Register command to refresh the tree view
-    context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => exports.syncTreeProvider?.refresh()));
+    context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => exports.fsTreeProvider?.refresh()));
     // Register command to reveal the tree view
     context.subscriptions.push(vscode.commands.registerCommand('filesync.revealView', async () => {
         await vscode.commands.executeCommand('workbench.view.explorer');
@@ -81,6 +81,7 @@ async function activate(context) {
         }
         // Update tree provider when files change
         exports.syncTreeProvider?.setPairs(exports.allFilesToSync);
+        exports.fsTreeProvider?.setTree(exports.fsTree);
     });
     context.subscriptions.push(saveListener);
     const saveNewFileListener = vscode.workspace.onDidCreateFiles(helpers_1.handleDidCreateFiles);
@@ -97,25 +98,27 @@ async function activate(context) {
     }
     // Update tree provider after startup tasks resolved
     exports.syncTreeProvider?.setPairs(exports.allFilesToSync);
+    exports.fsTreeProvider?.setTree(exports.fsTree);
+    exports.output.appendLine(`fsTree	post task: ${JSON.stringify(exports.fsTree)}`);
 }
 // This method is called when your extension is deactivated
 function deactivate() { }
 async function runStartupTasks(output) {
     output.appendLine('Running startup tasks...');
-    let { allFilesToSync, fsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output);
-    output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(fsTree)}`);
+    ({ allFilesToSync: exports.allFilesToSync, fsTree: exports.fsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output));
+    output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(exports.fsTree)}`);
     //VER aún no estoy trayendo el configFsTree de getFilesToSyncFromConfigFiles
     // estoy armando el fstree a continuación, pero en algún momento voy a tener que hacerlo dentro para poder dividir por config files también
     const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
     if (filesFromConfig) {
-        allFilesToSync.push(...filesFromConfig);
+        exports.allFilesToSync.push(...filesFromConfig);
     }
     const fsTreeFromConfig = {
         name: 'from config files',
         type: 'container',
         children: filesFromConfig.map(pair => ({ name: `${pair[0]} <-> ${pair[1]}`, type: 'pair' }))
     };
-    fsTree.push(fsTreeFromConfig);
-    output.appendLine(`fstree fstree final: ${JSON.stringify(fsTree)}`);
+    exports.fsTree.push(fsTreeFromConfig);
+    output.appendLine(`fstree fstree final: ${JSON.stringify(exports.fsTree)}`);
 }
 //# sourceMappingURL=extension.js.map

@@ -13,7 +13,7 @@ export class SyncTreeItem extends vscode.TreeItem {
   }
 }
 
-class fsTreeItem extends vscode.TreeItem {
+class FsTreeItem extends vscode.TreeItem {
   constructor(public readonly item: fsTreeElement) {
     super(
       item.name,
@@ -56,20 +56,41 @@ export class SyncTreeProvider implements vscode.TreeDataProvider<SyncTreeItem> {
   }
 }
 
-export class FsTreeProvider implements vscode.TreeDataProvider<fsTreeItem> {
-  getTreeItem(element: fsTreeItem): vscode.TreeItem {
+export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
+  getTreeItem(element: FsTreeItem): vscode.TreeItem {
     return element;
   }
 
-  getChildren(element?: fsTreeItem): Thenable<fsTreeItem[]> {
+  private _onDidChangeTreeData: vscode.EventEmitter<FsTreeItem | undefined | void> = new vscode.EventEmitter<FsTreeItem | undefined | void>();
+  readonly onDidChangeTreeData: vscode.Event<FsTreeItem | undefined | void> = this._onDidChangeTreeData.event;
+
+
+  private _myTree: fsTreeElement[] = [];
+
+  constructor(initialTree: fsTreeElement[] = []) {
+    this.setTree(initialTree);
+  }
+
+  setTree(tree: fsTreeElement[]) {
+    this._myTree = tree;
+    this.refresh();
+  }
+
+  refresh(): void {
+    this._onDidChangeTreeData.fire();
+  }
+
+
+
+  getChildren(element?: FsTreeItem): Thenable<FsTreeItem[]> {
     if (!element) {
       // Elementos raíz (folders)
-      return Promise.resolve(fsTree.map((d) => new fsTreeItem(d)));
+      return Promise.resolve(fsTree.map((d) => new FsTreeItem(d)));
     }
     if (element.item.type === "container" && element.item.children) {
       // Hijos de la carpeta
       return Promise.resolve(
-        element.item.children.map((child) => new fsTreeItem(child))
+        element.item.children.map((child) => new FsTreeItem(child))
       );
     }
     // Los archivos no tienen hijos
