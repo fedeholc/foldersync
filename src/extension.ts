@@ -7,6 +7,7 @@ import { SyncTreeProvider } from './syncTree';
 
 export let allFilesToSync: SettingsFilesToSync = [];
 export let syncTreeProvider: SyncTreeProvider | null = null;
+export let fsTree: fsTreeElement[] = [];
 
 export const output = vscode.window.createOutputChannel(APP_NAME);
 
@@ -79,11 +80,18 @@ export function deactivate() { }
 export async function runStartupTasks(output: vscode.OutputChannel) {
 
 	output.appendLine('Running startup tasks...');
-	allFilesToSync = await getFilesToSyncFromWorkspaceSettings(output) || [];
+	let { allFilesToSync, fsTree } = await getFilesToSyncFromWorkspaceSettings(output);
 
-	const filesFromConfig = await getFilesToSyncFromConfigFiles(output);
+	output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(fsTree)}`);
+	const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles(output);
 	if (filesFromConfig) {
 		allFilesToSync.push(...filesFromConfig);
 	}
 
 }
+
+export type fsTreeElement = {
+	name: string;
+	type: 'pair' | 'container';
+	children?: fsTreeElement[];
+};

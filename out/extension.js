@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.output = exports.fsTree = exports.syncTreeProvider = exports.allFilesToSync = void 0;
 exports.activate = activate;
 exports.deactivate = deactivate;
 exports.runStartupTasks = runStartupTasks;
@@ -41,21 +42,22 @@ const types_1 = require("./types");
 const helpers_1 = require("./helpers");
 const panel_1 = require("./panel");
 const syncTree_1 = require("./syncTree");
-let allFilesToSync = [];
-let syncTreeProvider = null;
+exports.allFilesToSync = [];
+exports.syncTreeProvider = null;
+exports.fsTree = [];
+exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
 async function activate(context) {
     // Use an OutputChannel for non-intrusive logging
-    const output = vscode.window.createOutputChannel(types_1.APP_NAME);
-    output.appendLine('filesync extension activated');
-    context.subscriptions.push(output);
+    exports.output.appendLine('filesync extension activated');
+    context.subscriptions.push(exports.output);
     // Run startup tasks immediately when extension activates
-    await runStartupTasks(output);
+    await runStartupTasks(exports.output);
     // Register tree view provider and create a TreeView so we can react to visibility changes
-    syncTreeProvider = new syncTree_1.SyncTreeProvider(allFilesToSync);
-    const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: syncTreeProvider });
+    exports.syncTreeProvider = new syncTree_1.SyncTreeProvider(exports.allFilesToSync);
+    const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: exports.syncTreeProvider });
     context.subscriptions.push(treeView);
     // Register command to refresh the tree view
-    context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => syncTreeProvider?.refresh()));
+    context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => exports.syncTreeProvider?.refresh()));
     // Register command to reveal the tree view
     context.subscriptions.push(vscode.commands.registerCommand('filesync.revealView', async () => {
         await vscode.commands.executeCommand('workbench.view.explorer');
@@ -65,73 +67,42 @@ async function activate(context) {
     const visibilityDisposable = treeView.onDidChangeVisibility((e) => {
         if (e.visible) {
             const syncPanel = panel_1.SyncPanel.createOrShow(context);
-            syncPanel.update(allFilesToSync);
+            syncPanel.update(exports.allFilesToSync);
         }
     });
     context.subscriptions.push(visibilityDisposable);
     // Listen for file save events and update panel when appropriate
     const saveListener = vscode.workspace.onDidSaveTextDocument(async (document) => {
-        await (0, helpers_1.handleOnDidSaveTextDocument)(document, output, allFilesToSync);
+        await (0, helpers_1.handleOnDidSaveTextDocument)(document, exports.output, exports.allFilesToSync);
         if (panel_1.SyncPanel.currentPanel) {
-            panel_1.SyncPanel.currentPanel.update(allFilesToSync);
+            panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync);
         }
         // Update tree provider when files change
-        syncTreeProvider?.setPairs(allFilesToSync);
+        exports.syncTreeProvider?.setPairs(exports.allFilesToSync);
     });
     context.subscriptions.push(saveListener);
-    const saveNewFileListener = vscode.workspace.onDidCreateFiles(async (event) => {
-        // Check if any of the created files is a config file
-        if (event.files.some(file => file.path.endsWith(`/${types_1.DEFAULT_CONFIG_FILE_NAME}`) || file.path.endsWith(`\\${types_1.DEFAULT_CONFIG_FILE_NAME}`))) {
-            output.appendLine('Detected creation of a new config file. Re-running startup tasks...');
-            await runStartupTasks(output);
-            if (panel_1.SyncPanel.currentPanel) {
-                panel_1.SyncPanel.currentPanel.update(allFilesToSync);
-            }
-            // Update tree provider when files change
-            syncTreeProvider?.setPairs(allFilesToSync);
-        }
-        // Check if any of the created files is a workspace settings file
-        if (event.files.some(file => file.path.endsWith('.code-workspace'))) {
-            output.appendLine('Detected creation of a new workspace settings file. Re-running startup tasks...');
-            await runStartupTasks(output);
-            if (panel_1.SyncPanel.currentPanel) {
-                panel_1.SyncPanel.currentPanel.update(allFilesToSync);
-            }
-            // Update tree provider when files change
-            syncTreeProvider?.setPairs(allFilesToSync);
-        }
-        // check if any of the created files is in a folder that is being synced
-        const foldersToSync = allFilesToSync.map(pair => pair[0].substring(0, pair[0].lastIndexOf('/')));
-        if (event.files.some(file => foldersToSync.some(folder => file.path.startsWith(folder)))) {
-            output.appendLine('Detected creation of a new file in a synced folder. Re-running startup tasks...');
-            await runStartupTasks(output);
-            if (panel_1.SyncPanel.currentPanel) {
-                panel_1.SyncPanel.currentPanel.update(allFilesToSync);
-            }
-            // Update tree provider when files change
-            syncTreeProvider?.setPairs(allFilesToSync);
-        }
-    });
+    const saveNewFileListener = vscode.workspace.onDidCreateFiles(helpers_1.handleDidCreateFiles);
     context.subscriptions.push(saveNewFileListener);
     // Register command to show the sync panel
     const panelDisposable = vscode.commands.registerCommand('filesync.showSyncPanel', async () => {
         const syncPanel = panel_1.SyncPanel.createOrShow(context);
-        syncPanel.update(allFilesToSync);
+        syncPanel.update(exports.allFilesToSync);
     });
     context.subscriptions.push(panelDisposable);
     // If the panel is open, update it with current data
     if (panel_1.SyncPanel.currentPanel) {
-        panel_1.SyncPanel.currentPanel.update(allFilesToSync);
+        panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync);
     }
     // Update tree provider after startup tasks resolved
-    syncTreeProvider?.setPairs(allFilesToSync);
+    exports.syncTreeProvider?.setPairs(exports.allFilesToSync);
 }
 // This method is called when your extension is deactivated
 function deactivate() { }
 async function runStartupTasks(output) {
     output.appendLine('Running startup tasks...');
-    allFilesToSync = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output) || [];
-    const filesFromConfig = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
+    let { allFilesToSync, fsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output);
+    output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(fsTree)}`);
+    const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
     if (filesFromConfig) {
         allFilesToSync.push(...filesFromConfig);
     }

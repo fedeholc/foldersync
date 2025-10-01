@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
-import { allFilesToSync, output, runStartupTasks, syncTreeProvider } from "./extension";
+import { allFilesToSync, fsTreeElement, output, runStartupTasks, syncTreeProvider } from "./extension";
 import { SyncPanel } from "./panel";
 
 export async function handleOnDidSaveTextDocument(document: vscode.TextDocument, output: vscode.OutputChannel, allFilesToSync: SettingsFilesToSync) {
@@ -156,18 +156,19 @@ function getAbsoluteFilePath(
  * are normalized against the workspace file location.
  * @returns The list of files to sync from the workspace settings, or null if none found.
  */
-export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputChannel): Promise<SettingsFilesToSync | null> {
+export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputChannel): Promise<{ allFilesToSync: SettingsFilesToSync, fsTree: fsTreeElement[] }> {
 
   output.appendLine('Retrieving files to sync from workspace settings');
 
   if (!vscode.workspace.workspaceFile) {
     output.appendLine('No workspace file found. Skipping workspace settings.');
-    return null;
+    return { allFilesToSync: [], fsTree: [] };
   }
 
   const filesToSyncFromWorkspace: SettingsFilesToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.filesToSync) || [];
 
-  output.appendLine(`Files to sync from workspace settings: ${JSON.stringify(filesToSyncFromWorkspace)}`);
+
+  output.appendLine(`Files to sync from workspace settings1: ${JSON.stringify(filesToSyncFromWorkspace)}`);
 
   const foldersToSyncFromWorkspace: SettingsFoldersToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.foldersToSync) || [];
 
@@ -222,7 +223,7 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
       filesToSyncFromWorkspace,
       workspaceFileUri
     );
-    output.appendLine(`files to sync from workspace: ${JSON.stringify(normalizedFiles)}`);
+    output.appendLine(`normalizedFiles files to sync from workspace settings: ${JSON.stringify(normalizedFiles)}`);
     for (const pair of normalizedFiles) {
       // Avoid duplicates
       if (!normalizedFilesToSync.find(p => p[0] === pair[0] && p[1] === pair[1])) {
@@ -231,8 +232,13 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
     }
   }
 
-  output.appendLine(`Normalized files to sync: ${JSON.stringify(normalizedFilesToSync)}`);
-  return normalizedFilesToSync.length > 0 ? normalizedFilesToSync : null;
+  const fsTreeFromWorkspace: fsTreeElement = {
+    name: 'from Workspace',
+    type: 'container',
+    children: normalizedFilesToSync.map(pair => ({ name: `${pair[0]} <-> ${pair[1]}`, type: 'pair' }))
+  };
+  output.appendLine(`Normalized files to sync from WKSP: ${JSON.stringify(normalizedFilesToSync)}`);
+  return { allFilesToSync: normalizedFilesToSync, fsTree: [fsTreeFromWorkspace] };
 }
 
 /**
@@ -241,12 +247,12 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
  * @param output Output channel for logging
  * @returns A promise that resolves to the list of files to sync, or null if none found
  */
-export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel): Promise<SettingsFilesToSync | null> {
+export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel): Promise<{ allFilesToSync: SettingsFilesToSync, fsTree: fsTreeElement[] }> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
 
   if (!workspaceFolders || workspaceFolders.length === 0) {
     // No workspace folders
-    return null;
+    return { allFilesToSync: [], fsTree: [] };
   }
   const configFileName = DEFAULT_CONFIG_FILE_NAME;
   const normalizedFilesToSync: SettingsFilesToSync = [];
@@ -277,7 +283,7 @@ export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel
       output.appendLine(`Error reading ${configFileName} in folder ${folder.name}: ${err}`);
     }
   };
-  return normalizedFilesToSync;
+  return { allFilesToSync: normalizedFilesToSync, fsTree: [] };
 
 }
 
