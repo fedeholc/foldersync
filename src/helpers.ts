@@ -90,6 +90,8 @@ export function normalizeFilesToSync(
   for (const [a, b] of files) {
     const ra = getAbsoluteFilePath(a, configFileUri);
     const rb = getAbsoluteFilePath(b, configFileUri);
+
+    //TODO: acá hay un problema, si no está el par de archivos no toma nada, pero estaría bien que si hay uno lo tome y cree el otro, habría que ver si acá o al momento de sincronizar
     if (!ra || !rb) {
       // Skip invalid entries
       continue;
@@ -223,7 +225,7 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
       filesToSyncFromWorkspace,
       workspaceFileUri
     );
-    output.appendLine(`normalizedFiles files to sync from workspace settings: ${JSON.stringify(normalizedFiles)}`);
+ 
     for (const pair of normalizedFiles) {
       // Avoid duplicates
       if (!normalizedFilesToSync.find(p => p[0] === pair[0] && p[1] === pair[1])) {
@@ -232,13 +234,13 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
     }
   }
 
+  //TODO: ojo porque acá estoy poniendo todos los archivos juntos bajo el container de workspace, pero sería bueno que si hay carpetas sincronizadas lo divida por carpetas también
   const fsTreeFromWorkspace: fsTreeElement = {
     name: 'from Workspace',
     type: 'container',
     children: normalizedFilesToSync.map(pair => ({ name: `${pair[0]} <-> ${pair[1]}`, type: 'pair' }))
   };
-  output.appendLine(`Normalized files to sync from WKSP: ${JSON.stringify(normalizedFilesToSync)}`);
-  return { allFilesToSync: normalizedFilesToSync, fsTree: [fsTreeFromWorkspace] };
+   return { allFilesToSync: normalizedFilesToSync, fsTree: [fsTreeFromWorkspace] };
 }
 
 /**

@@ -102,9 +102,18 @@ async function runStartupTasks(output) {
     output.appendLine('Running startup tasks...');
     let { allFilesToSync, fsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output);
     output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(fsTree)}`);
+    //VER aún no estoy trayendo el configFsTree de getFilesToSyncFromConfigFiles
+    // estoy armando el fstree a continuación, pero en algún momento voy a tener que hacerlo dentro para poder dividir por config files también
     const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
     if (filesFromConfig) {
         allFilesToSync.push(...filesFromConfig);
     }
+    const fsTreeFromConfig = {
+        name: 'from config files',
+        type: 'container',
+        children: filesFromConfig.map(pair => ({ name: `${pair[0]} <-> ${pair[1]}`, type: 'pair' }))
+    };
+    fsTree.push(fsTreeFromConfig);
+    output.appendLine(`fstree fstree final: ${JSON.stringify(fsTree)}`);
 }
 //# sourceMappingURL=extension.js.map
