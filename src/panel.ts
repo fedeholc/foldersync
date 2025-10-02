@@ -69,7 +69,7 @@ export class SyncPanel {
       <title>File Sync</title>
       <style>
         body { font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; padding: 12px; }
-        code { background:#f3f3f3; padding:2px 4px; border-radius:3px; }
+        code { background:#f3f3f3; color: black; padding:2px 4px; border-radius:3px; }
         li { margin-bottom: 12px; }
       </style>
     </head>
