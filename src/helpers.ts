@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
-import { allFilesToSync, fsTreeElement, output, runStartupTasks, syncTreeProvider } from "./extension";
+import { allFilesToSync, fsTree, fsTreeElement, fsTreeProvider, output, runStartupTasks, } from "./extension";
 import { SyncPanel } from "./panel";
 
 export async function handleOnDidSaveTextDocument(document: vscode.TextDocument, output: vscode.OutputChannel, allFilesToSync: SettingsFilesToSync) {
@@ -167,10 +167,10 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
     return { allFilesToSync: [], fsTree: [] };
   }
 
-  const filesToSyncFromWorkspace: SettingsFilesToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.filesToSync) || [];
+/*   const filesToSyncFromWorkspace: SettingsFilesToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.filesToSync) || [];
+ */
 
-
-  output.appendLine(`Files to sync from workspace settings1: ${JSON.stringify(filesToSyncFromWorkspace)}`);
+/*   output.appendLine(`Files to sync from workspace settings1: ${JSON.stringify(filesToSyncFromWorkspace)}`); */
 
   const foldersToSyncFromWorkspace: SettingsFoldersToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.foldersToSync) || [];
 
@@ -179,6 +179,12 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
   const workspaceFileUri = vscode.workspace.workspaceFile;
 
   const normalizedFilesToSync: SettingsFilesToSync = [];
+  const fsTreeFromWorkspace: fsTreeElement = {
+    name: 'from Workspace',
+    type: 'container',
+    children: []
+  };
+
   if (workspaceFileUri) {
     const normalizedFolders = normalizeFoldersToSync(
       foldersToSyncFromWorkspace,
@@ -212,35 +218,22 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
           }
 
         }
+        // Add to fsTree
+        const folderTreeElement: fsTreeElement = {
+          name: (folderA) + ' <-> ' + (folderB),
+          type: 'container',
+          children: normalizedFilesToSync
+            .filter(pair => pair[0].startsWith(folderA) && pair[1].startsWith(folderB))
+            .map(pair => ({ name: `${path.basename(pair[0])} <-> ${path.basename(pair[1])}`, type: 'pair' }))
+        };
+        fsTreeFromWorkspace?.children?.push(folderTreeElement);
       } catch (err) {
         output.appendLine(`Error reading folder ${folderA}: ${err}`);
       }
     }
   }
 
-
-  // normalize files 
-  if (workspaceFileUri) {
-    const normalizedFiles = normalizeFilesToSync(
-      filesToSyncFromWorkspace,
-      workspaceFileUri
-    );
- 
-    for (const pair of normalizedFiles) {
-      // Avoid duplicates
-      if (!normalizedFilesToSync.find(p => p[0] === pair[0] && p[1] === pair[1])) {
-        normalizedFilesToSync.push(pair);
-      }
-    }
-  }
-
-  //TODO: ojo porque acá estoy poniendo todos los archivos juntos bajo el container de workspace, pero sería bueno que si hay carpetas sincronizadas lo divida por carpetas también
-  const fsTreeFromWorkspace: fsTreeElement = {
-    name: 'from Workspace',
-    type: 'container',
-    children: normalizedFilesToSync.map(pair => ({ name: `${pair[0]} <-> ${pair[1]}`, type: 'pair' }))
-  };
-   return { allFilesToSync: normalizedFilesToSync, fsTree: [fsTreeFromWorkspace] };
+  return { allFilesToSync: normalizedFilesToSync, fsTree: [fsTreeFromWorkspace] };
 }
 
 /**
@@ -305,10 +298,10 @@ export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
     output.appendLine('Detected creation of a new config file. Re-running startup tasks...');
     await runStartupTasks(output);
     if (SyncPanel.currentPanel) {
-      SyncPanel.currentPanel.update(allFilesToSync);
+      SyncPanel.currentPanel.update(allFilesToSync, fsTree);
     }
     // Update tree provider when files change
-    syncTreeProvider?.setPairs(allFilesToSync);
+    fsTreeProvider?.setTree(fsTree);
   }
 
   // Check if any of the created files is a workspace settings file
@@ -316,10 +309,10 @@ export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
     output.appendLine('Detected creation of a new workspace settings file. Re-running startup tasks...');
     await runStartupTasks(output);
     if (SyncPanel.currentPanel) {
-      SyncPanel.currentPanel.update(allFilesToSync);
+      SyncPanel.currentPanel.update(allFilesToSync, fsTree);
     }
     // Update tree provider when files change
-    syncTreeProvider?.setPairs(allFilesToSync);
+    fsTreeProvider?.setTree(fsTree);
   }
 
   // check if any of the created files is in a folder that is being synced
@@ -328,9 +321,9 @@ export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
     output.appendLine('Detected creation of a new file in a synced folder. Re-running startup tasks...');
     await runStartupTasks(output);
     if (SyncPanel.currentPanel) {
-      SyncPanel.currentPanel.update(allFilesToSync);
+      SyncPanel.currentPanel.update(allFilesToSync, fsTree);
     }
     // Update tree provider when files change
-    syncTreeProvider?.setPairs(allFilesToSync);
+    fsTreeProvider?.setTree(fsTree);
   }
 }

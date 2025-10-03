@@ -3,11 +3,10 @@ import * as vscode from 'vscode';
 import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync } from './types';
 import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, handleDidCreateFiles, handleOnDidSaveTextDocument, normalizeFilesToSync } from './helpers';
 import { SyncPanel } from './panel';
-import { FsTreeProvider, SyncTreeProvider } from './syncTree';
+import { FsTreeProvider,   } from './syncTree';
 
 export let allFilesToSync: SettingsFilesToSync = [];
-export let syncTreeProvider: SyncTreeProvider | null = null;
-export let fsTree: fsTreeElement[] = [];
+ export let fsTree: fsTreeElement[] = [];
 export let fsTreeProvider: FsTreeProvider | null = null;
 
 export const output = vscode.window.createOutputChannel(APP_NAME);
@@ -38,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const visibilityDisposable = treeView.onDidChangeVisibility((e) => {
 		if (e.visible) {
 			const syncPanel = SyncPanel.createOrShow(context);
-			syncPanel.update(allFilesToSync);
+			syncPanel.update(allFilesToSync, fsTree);
 		}
 	});
 	context.subscriptions.push(visibilityDisposable);
@@ -51,7 +50,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// Update the panel if it's open
 		if (SyncPanel.currentPanel) {
-			SyncPanel.currentPanel.update(allFilesToSync);
+			SyncPanel.currentPanel.update(allFilesToSync, fsTree);
 		}
 		// Update tree provider
 		fsTreeProvider?.setTree(fsTree);
@@ -66,13 +65,13 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Register command to show the sync panel
 	const panelDisposable = vscode.commands.registerCommand('filesync.showSyncPanel', async () => {
 		const syncPanel = SyncPanel.createOrShow(context);
-		syncPanel.update(allFilesToSync);
+		syncPanel.update(allFilesToSync, fsTree);
 	});
 	context.subscriptions.push(panelDisposable);
 
 	// If the panel is open, update it with current data
 	if (SyncPanel.currentPanel) {
-		SyncPanel.currentPanel.update(allFilesToSync);
+		SyncPanel.currentPanel.update(allFilesToSync, fsTree);
 	}
 
 	// Update tree provider after startup tasks resolved

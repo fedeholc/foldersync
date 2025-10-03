@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.output = exports.fsTreeProvider = exports.fsTree = exports.syncTreeProvider = exports.allFilesToSync = void 0;
+exports.output = exports.fsTreeProvider = exports.fsTree = exports.allFilesToSync = void 0;
 exports.activate = activate;
 exports.deactivate = deactivate;
 exports.runStartupTasks = runStartupTasks;
@@ -43,7 +43,6 @@ const helpers_1 = require("./helpers");
 const panel_1 = require("./panel");
 const syncTree_1 = require("./syncTree");
 exports.allFilesToSync = [];
-exports.syncTreeProvider = null;
 exports.fsTree = [];
 exports.fsTreeProvider = null;
 exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
@@ -66,7 +65,7 @@ async function activate(context) {
     const visibilityDisposable = treeView.onDidChangeVisibility((e) => {
         if (e.visible) {
             const syncPanel = panel_1.SyncPanel.createOrShow(context);
-            syncPanel.update(exports.allFilesToSync);
+            syncPanel.update(exports.allFilesToSync, exports.fsTree);
         }
     });
     context.subscriptions.push(visibilityDisposable);
@@ -76,7 +75,7 @@ async function activate(context) {
         await (0, helpers_1.handleOnDidSaveTextDocument)(document, exports.output, exports.allFilesToSync);
         // Update the panel if it's open
         if (panel_1.SyncPanel.currentPanel) {
-            panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync);
+            panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync, exports.fsTree);
         }
         // Update tree provider
         exports.fsTreeProvider?.setTree(exports.fsTree);
@@ -88,12 +87,12 @@ async function activate(context) {
     // Register command to show the sync panel
     const panelDisposable = vscode.commands.registerCommand('filesync.showSyncPanel', async () => {
         const syncPanel = panel_1.SyncPanel.createOrShow(context);
-        syncPanel.update(exports.allFilesToSync);
+        syncPanel.update(exports.allFilesToSync, exports.fsTree);
     });
     context.subscriptions.push(panelDisposable);
     // If the panel is open, update it with current data
     if (panel_1.SyncPanel.currentPanel) {
-        panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync);
+        panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync, exports.fsTree);
     }
     // Update tree provider after startup tasks resolved
     exports.fsTreeProvider?.setTree(exports.fsTree);

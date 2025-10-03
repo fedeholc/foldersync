@@ -25,37 +25,7 @@ class FsTreeItem extends vscode.TreeItem {
   }
 }
 
-export class SyncTreeProvider implements vscode.TreeDataProvider<SyncTreeItem> {
-  private _onDidChangeTreeData: vscode.EventEmitter<SyncTreeItem | undefined | void> = new vscode.EventEmitter<SyncTreeItem | undefined | void>();
-  readonly onDidChangeTreeData: vscode.Event<SyncTreeItem | undefined | void> = this._onDidChangeTreeData.event;
-
-  private _pairs: SyncPair[] = [];
-
-  constructor(initialPairs: [string, string][] = []) {
-    this.setPairs(initialPairs);
-  }
-
-  setPairs(pairs: [string, string][]) {
-    this._pairs = pairs.map(([a, b]) => ({ a, b }));
-    this.refresh();
-  }
-
-  refresh(): void {
-    this._onDidChangeTreeData.fire();
-  }
-
-  getTreeItem(element: SyncTreeItem): vscode.TreeItem {
-    return element;
-  }
-
-  getChildren(element?: SyncTreeItem): Thenable<SyncTreeItem[]> {
-    if (element) {
-      return Promise.resolve([]);
-    }
-    return Promise.resolve(this._pairs.map((p) => new SyncTreeItem(p)));
-  }
-}
-
+ 
 export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
   getTreeItem(element: FsTreeItem): vscode.TreeItem {
     return element;

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { fsTree, fsTreeElement, output } from './extension';
 
 export class SyncPanel {
   public static currentPanel: SyncPanel | undefined;
@@ -13,7 +14,7 @@ export class SyncPanel {
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
     // Set initial HTML
-    this._panel.webview.html = this._getHtmlForWebview([]);
+    this._panel.webview.html = this._getHtmlForWebview([], []);
   }
 
   public static createOrShow(context: vscode.ExtensionContext) {
@@ -35,8 +36,8 @@ export class SyncPanel {
     return SyncPanel.currentPanel;
   }
 
-  public update(files: [string, string][]) {
-    this._panel.webview.html = this._getHtmlForWebview(files);
+  public update(files: [string, string][], fsTree: fsTreeElement[]) {
+    this._panel.webview.html = this._getHtmlForWebview(files, fsTree);
   }
 
   public dispose() {
@@ -51,15 +52,40 @@ export class SyncPanel {
     }
   }
 
-  private _getHtmlForWebview(files: [string, string][]) {
-    const items = files.map(([a, b]) => `
+  private _getHtmlForWebview(files: [string, string][], fsTree: fsTreeElement[]) {
+
+    const fsTreeHtml = fsTree.map(element => {
+      if (element.children && element.children.length > 0) {
+        const childrenHtml = element.children.map(child => `<li>${this._escapeHtml(child.name)}${child.type ? ` - ${this._escapeHtml(child.type)}` : ''}</li>`).join('\n');
+        return `<li>${this._escapeHtml(element.name)} - ${element.type || ''}<ul>${childrenHtml}</ul></li>`;
+      } else {
+        return `<li>${this._escapeHtml(element.name)} - ${element.type || ''}</li>`;
+      }
+    }).join('\n');
+
+
+    function generateHtmlFromFsTree(element: fsTreeElement[]): string {
+      return element.map(el => {
+        if (el.children && el.children.length > 0) {
+          const childrenHtml = generateHtmlFromFsTree(el.children);
+          return `<li>${el.name} - ${el.type || ''}<ul>${childrenHtml}</ul></li>`;
+        } else {
+          return `<li>${el.name} - ${el.type || ''}</li>`;
+        }
+      }).join('\n');
+    }
+
+    output.appendLine('Generating HTML for webview with fsTree elements: ' + JSON.stringify(fsTreeHtml));
+    /* const items = files.map(([a, b]) => `
       <li>
         <strong>A:</strong> <code>${this._escapeHtml(a)}</code><br/>
         <strong>B:</strong> <code>${this._escapeHtml(b)}</code>
       </li>
-    `).join('\n');
+    `).join('\n'); */
 
-    const content = files.length ? `<ul>${items}</ul>` : '<p>No files configured to sync.</p>';
+    // const content = files.length ? `<ul>${items}</ul>` : '<p>No files configured to sync.</p>';
+
+    const content = files.length ? `<ul>${generateHtmlFromFsTree(fsTree)}</ul>` : '<p>No files configured to sync.</p>';
 
     return `<!doctype html>
     <html lang="en">
