@@ -167,10 +167,10 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
     return { allFilesToSync: [], fsTree: [] };
   }
 
-/*   const filesToSyncFromWorkspace: SettingsFilesToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.filesToSync) || [];
- */
+  /*   const filesToSyncFromWorkspace: SettingsFilesToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.filesToSync) || [];
+   */
 
-/*   output.appendLine(`Files to sync from workspace settings1: ${JSON.stringify(filesToSyncFromWorkspace)}`); */
+  /*   output.appendLine(`Files to sync from workspace settings1: ${JSON.stringify(filesToSyncFromWorkspace)}`); */
 
   const foldersToSyncFromWorkspace: SettingsFoldersToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.foldersToSync) || [];
 
@@ -192,49 +192,60 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
     );
     output.appendLine(`Normalized folders to sync: ${JSON.stringify(normalizedFolders)}`);
     // For each folder pair, read files and add to filesToSyncFromWorkspace
-    for (const [folderA, folderB] of normalizedFolders) {
-      try {
-        const filesInA = await fs.promises.readdir(folderA);
-        for (const fileName of filesInA) {
-          const fileAPath = path.join(folderA, fileName);
-          const fileBPath = path.join(folderB, fileName);
-          // Check if it's a file (not a directory)
-          const stat = await fs.promises.stat(fileAPath);
-          if (stat.isFile()) {
-            normalizedFilesToSync.push([fileAPath, fileBPath]);
-          }
-        }
-        const filesInB = await fs.promises.readdir(folderB);
-        for (const fileName of filesInB) {
-          const fileAPath = path.join(folderA, fileName);
-          const fileBPath = path.join(folderB, fileName);
-          // Check if it's a file (not a directory)
-          const stat = await fs.promises.stat(fileBPath);
-          if (stat.isFile()) {
-            // if not already added from folderA, add it
-            if (!normalizedFilesToSync.find(pair => pair[0] === fileAPath && pair[1] === fileBPath)) {
-              normalizedFilesToSync.push([fileAPath, fileBPath]);
-            }
-          }
+    const { normalizedFilesToSync: filesFromFolders, fsTree: fsTreeFromFolders } = await getNormalizedFilesAndFsTreeFromFolders(normalizedFolders, output);
+    normalizedFilesToSync.push(...filesFromFolders);
+    fsTreeFromWorkspace.children?.push(...fsTreeFromFolders);
 
-        }
-        // Add to fsTree
-        const folderTreeElement: fsTreeElement = {
-          name: (folderA) + ' <-> ' + (folderB),
-          type: 'container',
-          children: normalizedFilesToSync
-            .filter(pair => pair[0].startsWith(folderA) && pair[1].startsWith(folderB))
-            .map(pair => ({ name: `${path.basename(pair[0])} <-> ${path.basename(pair[1])}`, type: 'pair' }))
-        };
-        fsTreeFromWorkspace?.children?.push(folderTreeElement);
-      } catch (err) {
-        output.appendLine(`Error reading folder ${folderA}: ${err}`);
-      }
-    }
   }
 
   return { allFilesToSync: normalizedFilesToSync, fsTree: [fsTreeFromWorkspace] };
 }
+
+async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: SettingsFoldersToSync, output: vscode.OutputChannel) {
+  const normalizedFilesToSync: SettingsFilesToSync = [];
+  const fsTree: fsTreeElement[] = [];
+  for (const [folderA, folderB] of normalizedFolders) {
+    try {
+      const filesInA = await fs.promises.readdir(folderA);
+      for (const fileName of filesInA) {
+        const fileAPath = path.join(folderA, fileName);
+        const fileBPath = path.join(folderB, fileName);
+        // Check if it's a file (not a directory)
+        const stat = await fs.promises.stat(fileAPath);
+        if (stat.isFile()) {
+          normalizedFilesToSync.push([fileAPath, fileBPath]);
+        }
+      }
+      const filesInB = await fs.promises.readdir(folderB);
+      for (const fileName of filesInB) {
+        const fileAPath = path.join(folderA, fileName);
+        const fileBPath = path.join(folderB, fileName);
+        // Check if it's a file (not a directory)
+        const stat = await fs.promises.stat(fileBPath);
+        if (stat.isFile()) {
+          // if not already added from folderA, add it
+          if (!normalizedFilesToSync.find(pair => pair[0] === fileAPath && pair[1] === fileBPath)) {
+            normalizedFilesToSync.push([fileAPath, fileBPath]);
+          }
+        }
+
+      }
+      // Add to fsTree
+      const folderTreeElement: fsTreeElement = {
+        name: (folderA) + ' <-> ' + (folderB),
+        type: 'container',
+        children: normalizedFilesToSync
+          .filter(pair => pair[0].startsWith(folderA) && pair[1].startsWith(folderB))
+          .map(pair => ({ name: `${path.basename(pair[0])} <-> ${path.basename(pair[1])}`, type: 'pair' }))
+      };
+      fsTree.push(folderTreeElement);
+    } catch (err) {
+      output.appendLine(`Error reading folder ${folderA}: ${err}`);
+    }
+  }
+  return { normalizedFilesToSync, fsTree };
+}
+
 
 /**
  * Gets the list of files to sync from the configuration files. FilePaths are
@@ -242,15 +253,20 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
  * @param output Output channel for logging
  * @returns A promise that resolves to the list of files to sync, or null if none found
  */
-export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel): Promise<{ allFilesToSync: SettingsFilesToSync, fsTree: fsTreeElement[] }> {
+export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel): Promise<{ allFilesToSync: SettingsFilesToSync, fsTree: fsTreeElement | null }> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
 
   if (!workspaceFolders || workspaceFolders.length === 0) {
     // No workspace folders
-    return { allFilesToSync: [], fsTree: [] };
+    return { allFilesToSync: [], fsTree: null };
   }
   const configFileName = DEFAULT_CONFIG_FILE_NAME;
   const normalizedFilesToSync: SettingsFilesToSync = [];
+  const fsTreeFromConfigFiles: fsTreeElement = {
+    name: 'from config files',
+    type: 'container',
+    children: []
+  };
 
   for (const folder of workspaceFolders) {
     const folderUri = folder.uri;
@@ -269,16 +285,26 @@ export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel
 
       const fileData = JSON.parse(jsonFileData.toString());
 
-      if (Array.isArray(fileData.filesToSync)) {
-        // normalize and add to allFilesToSync
-        normalizedFilesToSync.push(...normalizeFilesToSync(fileData.filesToSync, fileUri));
+      if (Array.isArray(fileData.foldersToSync)) {
+        const fsTreeFromFile: fsTreeElement = {
+          name: 'from config file: ' + fileUri.fsPath,
+          type: 'container',
+          children: []
+        };
+
+        const normalizedFolders = normalizeFoldersToSync(fileData.foldersToSync, fileUri);
+        const { normalizedFilesToSync: filesFromFolders, fsTree: fsTreeFromFolders } = await getNormalizedFilesAndFsTreeFromFolders(normalizedFolders, output);
+        normalizedFilesToSync.push(...filesFromFolders);
+        fsTreeFromFile.children?.push(...fsTreeFromFolders);
+        fsTreeFromConfigFiles.children?.push(fsTreeFromFile);
+
       }
 
     } catch (err) {
       output.appendLine(`Error reading ${configFileName} in folder ${folder.name}: ${err}`);
     }
   };
-  return { allFilesToSync: normalizedFilesToSync, fsTree: [] };
+  return { allFilesToSync: normalizedFilesToSync, fsTree: fsTreeFromConfigFiles };
 
 }
 

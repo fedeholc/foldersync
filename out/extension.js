@@ -110,12 +110,9 @@ async function runStartupTasks(output) {
     if (filesFromConfig) {
         exports.allFilesToSync.push(...filesFromConfig);
     }
-    const fsTreeFromConfig = {
-        name: 'from config files',
-        type: 'container',
-        children: filesFromConfig.map(pair => ({ name: `${pair[0]} <-> ${pair[1]}`, type: 'pair' }))
-    };
-    exports.fsTree.push(fsTreeFromConfig);
+    if (configFsTree) {
+        exports.fsTree.push(configFsTree);
+    }
     output.appendLine(`fstree fstree final: ${JSON.stringify(exports.fsTree)}`);
 }
 //# sourceMappingURL=extension.js.map

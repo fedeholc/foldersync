@@ -3,10 +3,11 @@ import * as vscode from 'vscode';
 import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync } from './types';
 import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, handleDidCreateFiles, handleOnDidSaveTextDocument, normalizeFilesToSync } from './helpers';
 import { SyncPanel } from './panel';
-import { FsTreeProvider,   } from './syncTree';
+import { FsTreeProvider, } from './syncTree';
+import { config } from 'node:process';
 
 export let allFilesToSync: SettingsFilesToSync = [];
- export let fsTree: fsTreeElement[] = [];
+export let fsTree: fsTreeElement[] = [];
 export let fsTreeProvider: FsTreeProvider | null = null;
 
 export const output = vscode.window.createOutputChannel(APP_NAME);
@@ -96,13 +97,10 @@ export async function runStartupTasks(output: vscode.OutputChannel) {
 	if (filesFromConfig) {
 		allFilesToSync.push(...filesFromConfig);
 	}
-	const fsTreeFromConfig: fsTreeElement = {
-		name: 'from config files',
-		type: 'container',
-		children: filesFromConfig.map(pair => ({ name: `${pair[0]} <-> ${pair[1]}`, type: 'pair' }))
-	};
-	fsTree.push(fsTreeFromConfig);
 
+	if (configFsTree) {
+		fsTree.push(configFsTree);
+	}
 	output.appendLine(`fstree fstree final: ${JSON.stringify(fsTree)}`);
 
 }
