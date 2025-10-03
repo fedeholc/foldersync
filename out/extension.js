@@ -48,13 +48,11 @@ exports.fsTree = [];
 exports.fsTreeProvider = null;
 exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
 async function activate(context) {
-    // Use an OutputChannel for non-intrusive logging
     exports.output.appendLine('filesync extension activated');
     context.subscriptions.push(exports.output);
     // Run startup tasks immediately when extension activates
     await runStartupTasks(exports.output);
     // Register tree view provider and create a TreeView so we can react to visibility changes
-    //syncTreeProvider = new SyncTreeProvider(allFilesToSync);
     exports.fsTreeProvider = new syncTree_1.FsTreeProvider(exports.fsTree);
     const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: exports.fsTreeProvider });
     context.subscriptions.push(treeView);
@@ -63,7 +61,6 @@ async function activate(context) {
     // Register command to reveal the tree view
     context.subscriptions.push(vscode.commands.registerCommand('filesync.revealView', async () => {
         await vscode.commands.executeCommand('workbench.view.explorer');
-        // optionally focus selection
     }));
     // When the tree view becomes visible (user clicks the Activity Bar icon), open the webview panel as well
     const visibilityDisposable = treeView.onDidChangeVisibility((e) => {
@@ -73,17 +70,19 @@ async function activate(context) {
         }
     });
     context.subscriptions.push(visibilityDisposable);
-    // Listen for file save events and update panel when appropriate
+    // Listen for file save events
     const saveListener = vscode.workspace.onDidSaveTextDocument(async (document) => {
+        // main logic to handle file save
         await (0, helpers_1.handleOnDidSaveTextDocument)(document, exports.output, exports.allFilesToSync);
+        // Update the panel if it's open
         if (panel_1.SyncPanel.currentPanel) {
             panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync);
         }
-        // Update tree provider when files change
-        exports.syncTreeProvider?.setPairs(exports.allFilesToSync);
+        // Update tree provider
         exports.fsTreeProvider?.setTree(exports.fsTree);
     });
     context.subscriptions.push(saveListener);
+    // Listen for new file creation events
     const saveNewFileListener = vscode.workspace.onDidCreateFiles(helpers_1.handleDidCreateFiles);
     context.subscriptions.push(saveNewFileListener);
     // Register command to show the sync panel
@@ -97,7 +96,6 @@ async function activate(context) {
         panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync);
     }
     // Update tree provider after startup tasks resolved
-    exports.syncTreeProvider?.setPairs(exports.allFilesToSync);
     exports.fsTreeProvider?.setTree(exports.fsTree);
     exports.output.appendLine(`fsTree	post task: ${JSON.stringify(exports.fsTree)}`);
 }
