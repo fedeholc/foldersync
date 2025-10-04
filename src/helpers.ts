@@ -144,7 +144,7 @@ function getAbsoluteFilePath(
     if (fs.existsSync(resolved)) {
       return resolved;
     }
-    return null;
+    return resolved;
   } catch (err) {
     // ignore and continue to fallback
     return null;
@@ -231,16 +231,33 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: Setting
 
       }
       // Add to fsTree
+      const children: fsTreeElement[] = normalizedFilesToSync
+        .filter(pair => pair[0].startsWith(folderA) && pair[1].startsWith(folderB))
+        .map(pair => ({ name: `${path.basename(pair[0])} <-> ${path.basename(pair[1])}`, type: 'pair' }));
+      // if children is empty, add a placeholder
+      if (children.length === 0) {
+        children.push({ name: '(empty)', type: 'pair' });
+      }
+
       const folderTreeElement: fsTreeElement = {
         name: (folderA) + ' <-> ' + (folderB),
         type: 'container',
-        children: normalizedFilesToSync
-          .filter(pair => pair[0].startsWith(folderA) && pair[1].startsWith(folderB))
-          .map(pair => ({ name: `${path.basename(pair[0])} <-> ${path.basename(pair[1])}`, type: 'pair' }))
+        children: children
       };
       fsTree.push(folderTreeElement);
     } catch (err) {
       output.appendLine(`Error reading folder ${folderA}: ${err}`);
+      // Add an error element to the fsTree
+      const errorElement: fsTreeElement = {
+        name: `Error reading folder(s)`,
+        type: 'pair'
+      };
+      const folderTreeElement: fsTreeElement = {
+        name: (folderA) + ' <-> ' + (folderB),
+        type: 'container',
+        children: [errorElement]
+      };
+      fsTree.push(folderTreeElement);
     }
   }
   return { normalizedFilesToSync, fsTree };
