@@ -41,6 +41,7 @@ const vscode = __importStar(require("vscode"));
 const helpers_1 = require("./helpers");
 const syncTree_1 = require("./syncTree");
 const types_1 = require("./types");
+// TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
 exports.allFilesToSync = [];
 exports.fsTree = [];
 exports.fsTreeProvider = null;

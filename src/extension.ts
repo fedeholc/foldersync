@@ -3,6 +3,8 @@ import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, han
 import { FsTreeProvider, } from './syncTree';
 import { APP_NAME, FsTreeElement, FilePairsArray } from './types';
 
+// TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
+
 export let allFilesToSync: FilePairsArray = [];
 export let fsTree: FsTreeElement[] = [];
 export let fsTreeProvider: FsTreeProvider | null = null;
