@@ -2,7 +2,6 @@ import * as fs from 'node:fs';
 import * as vscode from 'vscode';
 import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync } from './types';
 import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, handleDidCreateFiles, handleOnDidSaveTextDocument, normalizeFilesToSync } from './helpers';
-import { SyncPanel } from './panel';
 import { FsTreeProvider, } from './syncTree';
 import { config } from 'node:process';
 
@@ -34,14 +33,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		await vscode.commands.executeCommand('workbench.view.explorer');
 	}));
 
-	// When the tree view becomes visible (user clicks the Activity Bar icon), open the webview panel as well
-	const visibilityDisposable = treeView.onDidChangeVisibility((e) => {
-		if (e.visible) {
-			const syncPanel = SyncPanel.createOrShow(context);
-			syncPanel.update(allFilesToSync, fsTree);
-		}
-	});
-	context.subscriptions.push(visibilityDisposable);
+
 
 	// Listen for file save events
 	const saveListener = vscode.workspace.onDidSaveTextDocument(async (document) => {
@@ -49,10 +41,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		// main logic to handle file save
 		await handleOnDidSaveTextDocument(document, output, allFilesToSync);
 
-		// Update the panel if it's open
-		if (SyncPanel.currentPanel) {
-			SyncPanel.currentPanel.update(allFilesToSync, fsTree);
-		}
+
 		// Update tree provider
 		fsTreeProvider?.setTree(fsTree);
 	});
@@ -62,18 +51,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	const saveNewFileListener = vscode.workspace.onDidCreateFiles(handleDidCreateFiles);
 	context.subscriptions.push(saveNewFileListener);
 
-
-	// Register command to show the sync panel
-	const panelDisposable = vscode.commands.registerCommand('filesync.showSyncPanel', async () => {
-		const syncPanel = SyncPanel.createOrShow(context);
-		syncPanel.update(allFilesToSync, fsTree);
-	});
-	context.subscriptions.push(panelDisposable);
-
-	// If the panel is open, update it with current data
-	if (SyncPanel.currentPanel) {
-		SyncPanel.currentPanel.update(allFilesToSync, fsTree);
-	}
 
 	// Update tree provider after startup tasks resolved
 	fsTreeProvider?.setTree(fsTree);
@@ -87,10 +64,10 @@ export function deactivate() { }
 export async function runStartupTasks(output: vscode.OutputChannel) {
 
 	output.appendLine('Running startup tasks...');
- 	({ allFilesToSync, fsTree } = await getFilesToSyncFromWorkspaceSettings(output));
+	({ allFilesToSync, fsTree } = await getFilesToSyncFromWorkspaceSettings(output));
 
 	output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(fsTree)}`);
- 
+
 
 	//TODO: hay que hacer que cuando busca las folders si no existe no las excluya, sino que las incluya pero ver cómo, para mostrar el error.
 	const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles(output);
@@ -104,10 +81,11 @@ export async function runStartupTasks(output: vscode.OutputChannel) {
 	}
 	output.appendLine(`\n\nfstree fstree final: ${JSON.stringify(fsTree)}`);
 
+	fsTreeProvider?.setTree(fsTree);
 }
 
 export type fsTreeElement = {
 	name: string;
-	type: 'pair' | 'container' | 'folder-error';
+	type: 'pair' | 'container' | "folder" | 'folder-error';
 	children?: fsTreeElement[];
 };

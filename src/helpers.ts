@@ -4,7 +4,6 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
 import { allFilesToSync, fsTree, fsTreeElement, fsTreeProvider, output, runStartupTasks, } from "./extension";
-import { SyncPanel } from "./panel";
 
 export async function handleOnDidSaveTextDocument(document: vscode.TextDocument, output: vscode.OutputChannel, allFilesToSync: SettingsFilesToSync) {
 
@@ -35,6 +34,9 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
       }
     }
   }
+
+  // esto funciona para que si se modifica alguno de los archivos de configuración vuelva procesarlos, pero probablemente sea poco eficiente y convenga tener una lista con los archivos de configuración y ver si el que se guardó está en esa lista
+  runStartupTasks(output);
 }
 
 /**
@@ -79,7 +81,7 @@ export async function filesEqualByHash(aPath: string, bPath: string): Promise<bo
  * Normalization means: if a path is relative, it will be resolved against the
  * config file location.
  * @param files Array of file pairs to sync
- * @param configFileUri The URI of the config file (or workspace file)
+ * @param configFileUri The URI of the config file (or workspace file) to resolve relative paths against
  * @returns Normalized array of file pairs
  */
 export function normalizeFilesToSync(
@@ -241,7 +243,7 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: Setting
 
       const folderTreeElement: fsTreeElement = {
         name: (folderA) + ' <-> ' + (folderB),
-        type: 'container',
+        type: 'folder',
         children: children
       };
       fsTree.push(folderTreeElement);
@@ -340,22 +342,16 @@ export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
   if (event.files.some(file => file.path.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || file.path.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`))) {
     output.appendLine('Detected creation of a new config file. Re-running startup tasks...');
     await runStartupTasks(output);
-    if (SyncPanel.currentPanel) {
-      SyncPanel.currentPanel.update(allFilesToSync, fsTree);
-    }
-    // Update tree provider when files change
-    fsTreeProvider?.setTree(fsTree);
+
+
   }
 
   // Check if any of the created files is a workspace settings file
   if (event.files.some(file => file.path.endsWith('.code-workspace'))) {
     output.appendLine('Detected creation of a new workspace settings file. Re-running startup tasks...');
     await runStartupTasks(output);
-    if (SyncPanel.currentPanel) {
-      SyncPanel.currentPanel.update(allFilesToSync, fsTree);
-    }
-    // Update tree provider when files change
-    fsTreeProvider?.setTree(fsTree);
+
+
   }
 
   // check if any of the created files is in a folder that is being synced
@@ -363,10 +359,7 @@ export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
   if (event.files.some(file => foldersToSync.some(folder => file.path.startsWith(folder)))) {
     output.appendLine('Detected creation of a new file in a synced folder. Re-running startup tasks...');
     await runStartupTasks(output);
-    if (SyncPanel.currentPanel) {
-      SyncPanel.currentPanel.update(allFilesToSync, fsTree);
-    }
-    // Update tree provider when files change
-    fsTreeProvider?.setTree(fsTree);
+
+
   }
 }

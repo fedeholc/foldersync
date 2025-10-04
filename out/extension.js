@@ -40,7 +40,6 @@ exports.runStartupTasks = runStartupTasks;
 const vscode = __importStar(require("vscode"));
 const types_1 = require("./types");
 const helpers_1 = require("./helpers");
-const panel_1 = require("./panel");
 const syncTree_1 = require("./syncTree");
 exports.allFilesToSync = [];
 exports.fsTree = [];
@@ -61,22 +60,10 @@ async function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('filesync.revealView', async () => {
         await vscode.commands.executeCommand('workbench.view.explorer');
     }));
-    // When the tree view becomes visible (user clicks the Activity Bar icon), open the webview panel as well
-    const visibilityDisposable = treeView.onDidChangeVisibility((e) => {
-        if (e.visible) {
-            const syncPanel = panel_1.SyncPanel.createOrShow(context);
-            syncPanel.update(exports.allFilesToSync, exports.fsTree);
-        }
-    });
-    context.subscriptions.push(visibilityDisposable);
     // Listen for file save events
     const saveListener = vscode.workspace.onDidSaveTextDocument(async (document) => {
         // main logic to handle file save
         await (0, helpers_1.handleOnDidSaveTextDocument)(document, exports.output, exports.allFilesToSync);
-        // Update the panel if it's open
-        if (panel_1.SyncPanel.currentPanel) {
-            panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync, exports.fsTree);
-        }
         // Update tree provider
         exports.fsTreeProvider?.setTree(exports.fsTree);
     });
@@ -84,16 +71,6 @@ async function activate(context) {
     // Listen for new file creation events
     const saveNewFileListener = vscode.workspace.onDidCreateFiles(helpers_1.handleDidCreateFiles);
     context.subscriptions.push(saveNewFileListener);
-    // Register command to show the sync panel
-    const panelDisposable = vscode.commands.registerCommand('filesync.showSyncPanel', async () => {
-        const syncPanel = panel_1.SyncPanel.createOrShow(context);
-        syncPanel.update(exports.allFilesToSync, exports.fsTree);
-    });
-    context.subscriptions.push(panelDisposable);
-    // If the panel is open, update it with current data
-    if (panel_1.SyncPanel.currentPanel) {
-        panel_1.SyncPanel.currentPanel.update(exports.allFilesToSync, exports.fsTree);
-    }
     // Update tree provider after startup tasks resolved
     exports.fsTreeProvider?.setTree(exports.fsTree);
     exports.output.appendLine(`\n\n\n\nfsTree	post task: ${JSON.stringify(exports.fsTree)}`);
@@ -114,5 +91,6 @@ async function runStartupTasks(output) {
         exports.fsTree.push(configFsTree);
     }
     output.appendLine(`\n\nfstree fstree final: ${JSON.stringify(exports.fsTree)}`);
+    exports.fsTreeProvider?.setTree(exports.fsTree);
 }
 //# sourceMappingURL=extension.js.map
