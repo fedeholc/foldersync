@@ -108,6 +108,6 @@ export async function runStartupTasks(output: vscode.OutputChannel) {
 
 export type fsTreeElement = {
 	name: string;
-	type: 'pair' | 'container';
+	type: 'pair' | 'container' | 'folder-error';
 	children?: fsTreeElement[];
 };

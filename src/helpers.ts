@@ -254,7 +254,7 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: Setting
       };
       const folderTreeElement: fsTreeElement = {
         name: (folderA) + ' <-> ' + (folderB),
-        type: 'container',
+        type: 'folder-error',
         children: [errorElement]
       };
       fsTree.push(folderTreeElement);
