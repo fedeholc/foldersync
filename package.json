@@ -40,7 +40,7 @@
         {
           "id": "filesync_container",
           "title": "File Sync",
-          "icon": "resources/icons/filesync.svg"
+          "icon": "resources/icons/filesync2.svg"
         }
       ]
     },
@@ -49,7 +49,7 @@
         {
           "id": "filesync.syncView",
           "name": "File Sync",
-          "icon": "resources/icons/filesync.svg"
+          "icon": "resources/icons/filesync2.svg"
         }
       ]
     },
