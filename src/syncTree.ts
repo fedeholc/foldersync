@@ -3,15 +3,7 @@ import { fsTree, fsTreeElement } from './extension';
 
 export type SyncPair = { a: string; b: string };
 
-export class SyncTreeItem extends vscode.TreeItem {
-  constructor(public readonly pair: SyncPair) {
-    super(pair.a, vscode.TreeItemCollapsibleState.None);
-    this.description = pair.b;
-    this.contextValue = 'syncPair';
-    this.resourceUri = vscode.Uri.file(pair.a);
-    this.iconPath = new vscode.ThemeIcon('file-symlink-file');
-  }
-}
+
 
 class FsTreeItem extends vscode.TreeItem {
   constructor(public readonly item: fsTreeElement) {
@@ -25,7 +17,7 @@ class FsTreeItem extends vscode.TreeItem {
   }
 }
 
- 
+
 export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
   getTreeItem(element: FsTreeItem): vscode.TreeItem {
     return element;
@@ -55,7 +47,7 @@ export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
   getChildren(element?: FsTreeItem): Thenable<FsTreeItem[]> {
     if (!element) {
       // Elementos raíz (folders)
-      return Promise.resolve(fsTree.map((d) => new FsTreeItem(d)));
+      return Promise.resolve(this._myTree.map((d) => new FsTreeItem(d)));
     }
     if (element.item.type === "container" && element.item.children) {
       // Hijos de la carpeta
