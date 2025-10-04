@@ -104,8 +104,7 @@ async function runStartupTasks(output) {
     output.appendLine('Running startup tasks...');
     ({ allFilesToSync: exports.allFilesToSync, fsTree: exports.fsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output));
     output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(exports.fsTree)}`);
-    //VER aún no estoy trayendo el configFsTree de getFilesToSyncFromConfigFiles
-    // estoy armando el fstree a continuación, pero en algún momento voy a tener que hacerlo dentro para poder dividir por config files también
+    //TODO: hay que hacer que cuando busca las folders si no existe no las excluya, sino que las incluya pero ver cómo, para mostrar el error.
     const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
     output.appendLine(`fstree to sync from config files: ${JSON.stringify(configFsTree)}`);
     if (filesFromConfig) {
