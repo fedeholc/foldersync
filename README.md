@@ -1,12 +1,12 @@
 # Testing Extension
 
-Un archivo `filesync.config.json` que tenga esta forma:
+Un archivo `foldersync.config.json` que tenga esta forma:
 
 ```json
 {
-  "filesToSync": [
-    ["./a/f.txt", "./b/f.txt"],
-    ["./a/g.txt", "./b/g.txt"]
+  "foldersync": [
+    ["./back/types", "./front/types"],
+    ["./a", "./b"]
   ]
 }
 ```
@@ -14,8 +14,24 @@ Un archivo `filesync.config.json` que tenga esta forma:
 O en el workspace (`.code-workspace`), dentro de su sección settings :
 
 ```json
-	"settings": { "filesync.filesToSync": [
-    ["./a/f.txt", "./b/f.txt"],
-    ["./a/g.txt", "./b/g.txt"]
-  ] },
+	"settings": {
+    "foldersync.folderPairs": [
+      ["./back/types", "./front/types"],
+      ["./a", "./b"]
+    ]
+  },
+```
+
+o también se puede escribir así:
+
+```json
+  "settings": {
+    "foldersync": {
+      "globalEnabled": true,
+      "folderPairs": [
+        ["./back/types", "./front/types"],
+        ["./a", "./b"]
+      ]
+    },
+  }
 ```

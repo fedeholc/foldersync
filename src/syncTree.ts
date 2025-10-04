@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
-import { fsTreeElement } from './extension';
+import { FsTreeElement } from './types';
 
 export type SyncPair = { a: string; b: string };
 
 class FsTreeItem extends vscode.TreeItem {
-  constructor(public readonly item: fsTreeElement) {
+  constructor(public readonly item: FsTreeElement) {
     super(
       item.name,
       item.type === "folder" || item.type === "folder-error"
@@ -35,13 +35,13 @@ export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
   readonly onDidChangeTreeData: vscode.Event<FsTreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
 
-  private _myTree: fsTreeElement[] = [];
+  private _myTree: FsTreeElement[] = [];
 
-  constructor(initialTree: fsTreeElement[] = []) {
+  constructor(initialTree: FsTreeElement[] = []) {
     this.setTree(initialTree);
   }
 
-  setTree(tree: fsTreeElement[]) {
+  setTree(tree: FsTreeElement[]) {
     this._myTree = tree;
     this.refresh();
   }

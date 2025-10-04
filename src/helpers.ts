@@ -1,11 +1,11 @@
-import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, SETTINGS_NAMES, SettingsFilesToSync, SettingsFoldersToSync } from "./types";
+import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, FsTreeElement, SETTINGS_NAMES, FilePairsArray, FolderPairsArray } from "./types";
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
-import { allFilesToSync, fsTree, fsTreeElement, fsTreeProvider, output, runStartupTasks, } from "./extension";
+import { allFilesToSync, fsTree, fsTreeProvider, output, runStartupTasks, } from "./extension";
 
-export async function handleOnDidSaveTextDocument(document: vscode.TextDocument, output: vscode.OutputChannel, allFilesToSync: SettingsFilesToSync) {
+export async function handleOnDidSaveTextDocument(document: vscode.TextDocument) {
 
   const documentPath = document.uri.fsPath;
   output.appendLine(`Document saved: ${documentPath}`);
@@ -85,10 +85,10 @@ export async function filesEqualByHash(aPath: string, bPath: string): Promise<bo
  * @returns Normalized array of file pairs
  */
 export function normalizeFilesToSync(
-  files: SettingsFilesToSync,
+  files: FilePairsArray,
   configFileUri: vscode.Uri
-): SettingsFilesToSync {
-  const normalized: SettingsFilesToSync = [];
+): FilePairsArray {
+  const normalized: FilePairsArray = [];
   for (const [a, b] of files) {
     const ra = getAbsoluteFilePath(a, configFileUri);
     const rb = getAbsoluteFilePath(b, configFileUri);
@@ -104,10 +104,10 @@ export function normalizeFilesToSync(
 }
 
 export function normalizeFoldersToSync(
-  folders: SettingsFoldersToSync,
+  folders: FolderPairsArray,
   configFileUri: vscode.Uri
-): SettingsFoldersToSync {
-  const normalized: SettingsFoldersToSync = [];
+): FolderPairsArray {
+  const normalized: FolderPairsArray = [];
   for (const [a, b] of folders) {
     const ra = getAbsoluteFilePath(a, configFileUri);
     const rb = getAbsoluteFilePath(b, configFileUri);
@@ -160,7 +160,7 @@ function getAbsoluteFilePath(
  * are normalized against the workspace file location.
  * @returns The list of files to sync from the workspace settings, or null if none found.
  */
-export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputChannel): Promise<{ allFilesToSync: SettingsFilesToSync, fsTree: fsTreeElement[] }> {
+export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputChannel): Promise<{ allFilesToSync: FilePairsArray, fsTree: FsTreeElement[] }> {
 
   output.appendLine('Retrieving files to sync from workspace settings');
 
@@ -174,14 +174,14 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
 
   /*   output.appendLine(`Files to sync from workspace settings1: ${JSON.stringify(filesToSyncFromWorkspace)}`); */
 
-  const foldersToSyncFromWorkspace: SettingsFoldersToSync = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.foldersToSync) || [];
+  const foldersToSyncFromWorkspace: FolderPairsArray = vscode.workspace.getConfiguration(APP_NAME).get(SETTINGS_NAMES.folderPairs) || [];
 
   output.appendLine(`Folders to sync from workspace settings: ${JSON.stringify(foldersToSyncFromWorkspace)}`);
 
   const workspaceFileUri = vscode.workspace.workspaceFile;
 
-  const normalizedFilesToSync: SettingsFilesToSync = [];
-  const fsTreeFromWorkspace: fsTreeElement = {
+  const normalizedFilesToSync: FilePairsArray = [];
+  const fsTreeFromWorkspace: FsTreeElement = {
     name: 'from Workspace',
     type: 'container',
     children: []
@@ -203,9 +203,9 @@ export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputC
   return { allFilesToSync: normalizedFilesToSync, fsTree: [fsTreeFromWorkspace] };
 }
 
-async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: SettingsFoldersToSync, output: vscode.OutputChannel) {
-  const normalizedFilesToSync: SettingsFilesToSync = [];
-  const fsTree: fsTreeElement[] = [];
+async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderPairsArray, output: vscode.OutputChannel) {
+  const normalizedFilesToSync: FilePairsArray = [];
+  const fsTree: FsTreeElement[] = [];
   for (const [folderA, folderB] of normalizedFolders) {
     try {
       const filesInA = await fs.promises.readdir(folderA);
@@ -233,7 +233,7 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: Setting
 
       }
       // Add to fsTree
-      const children: fsTreeElement[] = normalizedFilesToSync
+      const children: FsTreeElement[] = normalizedFilesToSync
         .filter(pair => pair[0].startsWith(folderA) && pair[1].startsWith(folderB))
         .map(pair => ({ name: `${path.basename(pair[0])} <-> ${path.basename(pair[1])}`, type: 'pair' }));
       // if children is empty, add a placeholder
@@ -241,7 +241,7 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: Setting
         children.push({ name: '(empty)', type: 'pair' });
       }
 
-      const folderTreeElement: fsTreeElement = {
+      const folderTreeElement: FsTreeElement = {
         name: (folderA) + ' <-> ' + (folderB),
         type: 'folder',
         children: children
@@ -250,11 +250,11 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: Setting
     } catch (err) {
       output.appendLine(`Error reading folder ${folderA}: ${err}`);
       // Add an error element to the fsTree
-      const errorElement: fsTreeElement = {
+      const errorElement: FsTreeElement = {
         name: `Error reading folder(s)`,
         type: 'pair'
       };
-      const folderTreeElement: fsTreeElement = {
+      const folderTreeElement: FsTreeElement = {
         name: (folderA) + ' <-> ' + (folderB),
         type: 'folder-error',
         children: [errorElement]
@@ -272,7 +272,7 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: Setting
  * @param output Output channel for logging
  * @returns A promise that resolves to the list of files to sync, or null if none found
  */
-export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel): Promise<{ allFilesToSync: SettingsFilesToSync, fsTree: fsTreeElement | null }> {
+export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel): Promise<{ allFilesToSync: FilePairsArray, fsTree: FsTreeElement | null }> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
 
   if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -280,8 +280,8 @@ export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel
     return { allFilesToSync: [], fsTree: null };
   }
   const configFileName = DEFAULT_CONFIG_FILE_NAME;
-  const normalizedFilesToSync: SettingsFilesToSync = [];
-  const fsTreeFromConfigFiles: fsTreeElement = {
+  const normalizedFilesToSync: FilePairsArray = [];
+  const fsTreeFromConfigFiles: FsTreeElement = {
     name: 'from config files',
     type: 'container',
     children: []
@@ -305,7 +305,7 @@ export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel
       const fileData = JSON.parse(jsonFileData.toString());
 
       if (Array.isArray(fileData.foldersToSync)) {
-        const fsTreeFromFile: fsTreeElement = {
+        const fsTreeFromFile: FsTreeElement = {
           name: 'from config file: ' + fileUri.fsPath,
           type: 'container',
           children: []

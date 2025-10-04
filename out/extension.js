@@ -38,59 +38,51 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 exports.runStartupTasks = runStartupTasks;
 const vscode = __importStar(require("vscode"));
-const types_1 = require("./types");
 const helpers_1 = require("./helpers");
 const syncTree_1 = require("./syncTree");
+const types_1 = require("./types");
 exports.allFilesToSync = [];
 exports.fsTree = [];
 exports.fsTreeProvider = null;
 exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
 async function activate(context) {
-    exports.output.appendLine('filesync extension activated');
+    exports.output.appendLine('foldersync extension activated');
     context.subscriptions.push(exports.output);
     // Run startup tasks immediately when extension activates
     await runStartupTasks(exports.output);
     // Register tree view provider and create a TreeView so we can react to visibility changes
     exports.fsTreeProvider = new syncTree_1.FsTreeProvider(exports.fsTree);
-    const treeView = vscode.window.createTreeView('filesync.syncView', { treeDataProvider: exports.fsTreeProvider });
+    const treeView = vscode.window.createTreeView('foldersync.syncView', { treeDataProvider: exports.fsTreeProvider });
     context.subscriptions.push(treeView);
     // Register command to refresh the tree view
-    context.subscriptions.push(vscode.commands.registerCommand('filesync.refreshView', () => exports.fsTreeProvider?.refresh()));
+    context.subscriptions.push(vscode.commands.registerCommand('foldersync.refreshView', () => exports.fsTreeProvider?.refresh()));
     // Register command to reveal the tree view
-    context.subscriptions.push(vscode.commands.registerCommand('filesync.revealView', async () => {
+    context.subscriptions.push(vscode.commands.registerCommand('foldersync.revealView', async () => {
         await vscode.commands.executeCommand('workbench.view.explorer');
     }));
     // Listen for file save events
-    const saveListener = vscode.workspace.onDidSaveTextDocument(async (document) => {
-        // main logic to handle file save
-        await (0, helpers_1.handleOnDidSaveTextDocument)(document, exports.output, exports.allFilesToSync);
-        // Update tree provider
-        exports.fsTreeProvider?.setTree(exports.fsTree);
-    });
+    const saveListener = vscode.workspace.onDidSaveTextDocument(helpers_1.handleOnDidSaveTextDocument);
     context.subscriptions.push(saveListener);
     // Listen for new file creation events
     const saveNewFileListener = vscode.workspace.onDidCreateFiles(helpers_1.handleDidCreateFiles);
     context.subscriptions.push(saveNewFileListener);
     // Update tree provider after startup tasks resolved
     exports.fsTreeProvider?.setTree(exports.fsTree);
-    exports.output.appendLine(`\n\n\n\nfsTree	post task: ${JSON.stringify(exports.fsTree)}`);
+    //output.appendLine(`\n\n\n\nfsTree	post task: ${JSON.stringify(fsTree)}`);
 }
 // This method is called when your extension is deactivated
 function deactivate() { }
 async function runStartupTasks(output) {
     output.appendLine('Running startup tasks...');
     ({ allFilesToSync: exports.allFilesToSync, fsTree: exports.fsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output));
-    output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(exports.fsTree)}`);
     //TODO: hay que hacer que cuando busca las folders si no existe no las excluya, sino que las incluya pero ver cómo, para mostrar el error.
     const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
-    output.appendLine(`fstree to sync from config files: ${JSON.stringify(configFsTree)}`);
     if (filesFromConfig) {
         exports.allFilesToSync.push(...filesFromConfig);
     }
     if (configFsTree) {
         exports.fsTree.push(configFsTree);
     }
-    output.appendLine(`\n\nfstree fstree final: ${JSON.stringify(exports.fsTree)}`);
     exports.fsTreeProvider?.setTree(exports.fsTree);
 }
 //# sourceMappingURL=extension.js.map

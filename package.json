@@ -1,7 +1,7 @@
 {
-  "name": "folder-sync",
+  "name": "foldersync",
   "publisher": "fedeholc",
-  "displayName": "folder-sync",
+  "displayName": "foldersync",
   "description": "Syncs files between folders based on configuration files.",
   "version": "0.0.1",
   "engines": {
@@ -19,51 +19,37 @@
   "contributes": {
     "commands": [
       {
-        "command": "filesync.helloWorld",
-        "title": "filesync Hello World"
+        "command": "foldersync.showSyncPanel",
+        "title": "foldersync: Show Sync Panel"
       },
       {
-        "command": "filesync.showSyncPanel",
-        "title": "File Sync: Show Sync Panel"
+        "command": "foldersync.refreshView",
+        "title": "foldersync: Refresh View"
       },
       {
-        "command": "filesync.refreshView",
-        "title": "File Sync: Refresh View"
-      },
-      {
-        "command": "filesync.revealView",
-        "title": "File Sync: Reveal View"
+        "command": "foldersync.revealView",
+        "title": "foldersync: Reveal View"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "filesync_container",
-          "title": "File Sync",
+          "id": "foldersync_container",
+          "title": "foldersync",
           "icon": "resources/icons/filesync2.svg"
         }
       ]
     },
     "views": {
-      "filesync_container": [
+      "foldersync_container": [
         {
-          "id": "filesync.syncView",
-          "name": "File Sync",
+          "id": "foldersync.syncView",
+          "name": "foldersync",
           "icon": "resources/icons/filesync2.svg"
         }
       ]
     },
-    "view/item/context": {},
-    "menus": {
-      "view/title": [
-        {
-          "command": "filesync.showSyncPanel",
-          "when": "view == filesync.syncView",
-          "group": "navigation",
-          "title": "Open Sync Panel"
-        }
-      ]
-    }
+    "view/item/context": {}
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
