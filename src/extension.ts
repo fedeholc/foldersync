@@ -77,7 +77,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Update tree provider after startup tasks resolved
 	fsTreeProvider?.setTree(fsTree);
-	output.appendLine(`fsTree	post task: ${JSON.stringify(fsTree)}`);
+	output.appendLine(`\n\n\n\nfsTree	post task: ${JSON.stringify(fsTree)}`);
 }
 
 // This method is called when your extension is deactivated
@@ -87,13 +87,14 @@ export function deactivate() { }
 export async function runStartupTasks(output: vscode.OutputChannel) {
 
 	output.appendLine('Running startup tasks...');
-	({ allFilesToSync, fsTree } = await getFilesToSyncFromWorkspaceSettings(output));
+ 	({ allFilesToSync, fsTree } = await getFilesToSyncFromWorkspaceSettings(output));
 
 	output.appendLine(`fstree to sync from workspace settings: ${JSON.stringify(fsTree)}`);
-
+ 
 	//VER aún no estoy trayendo el configFsTree de getFilesToSyncFromConfigFiles
 	// estoy armando el fstree a continuación, pero en algún momento voy a tener que hacerlo dentro para poder dividir por config files también
 	const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles(output);
+	output.appendLine(`fstree to sync from config files: ${JSON.stringify(configFsTree)}`);
 	if (filesFromConfig) {
 		allFilesToSync.push(...filesFromConfig);
 	}
@@ -101,7 +102,7 @@ export async function runStartupTasks(output: vscode.OutputChannel) {
 	if (configFsTree) {
 		fsTree.push(configFsTree);
 	}
-	output.appendLine(`fstree fstree final: ${JSON.stringify(fsTree)}`);
+	output.appendLine(`\n\nfstree fstree final: ${JSON.stringify(fsTree)}`);
 
 }
 

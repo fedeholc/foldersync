@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { fsTree, fsTreeElement } from './extension';
+import { fsTreeElement } from './extension';
 
 export type SyncPair = { a: string; b: string };
 
@@ -14,6 +14,12 @@ class FsTreeItem extends vscode.TreeItem {
         : vscode.TreeItemCollapsibleState.None
     );
     this.contextValue = item.type;
+    // set a ThemeIcon depending on the element type so items show icons in the tree
+    if (item.type === 'container') {
+      this.iconPath = new vscode.ThemeIcon('folder');
+    } else {
+      this.iconPath = new vscode.ThemeIcon('file');
+    }
   }
 }
 
@@ -54,6 +60,13 @@ export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
       return Promise.resolve(
         element.item.children.map((child) => new FsTreeItem(child))
       );
+    }
+    if (element.item.type === "container" && !element.item.children) {
+      // show a child item indicating no children
+      return Promise.resolve([
+        new FsTreeItem({ name: "(empty)", type: "pair" })
+      ]);
+
     }
     // Los archivos no tienen hijos
     return Promise.resolve([]);

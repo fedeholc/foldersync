@@ -96,7 +96,7 @@ async function activate(context) {
     }
     // Update tree provider after startup tasks resolved
     exports.fsTreeProvider?.setTree(exports.fsTree);
-    exports.output.appendLine(`fsTree	post task: ${JSON.stringify(exports.fsTree)}`);
+    exports.output.appendLine(`\n\n\n\nfsTree	post task: ${JSON.stringify(exports.fsTree)}`);
 }
 // This method is called when your extension is deactivated
 function deactivate() { }
@@ -107,12 +107,13 @@ async function runStartupTasks(output) {
     //VER aún no estoy trayendo el configFsTree de getFilesToSyncFromConfigFiles
     // estoy armando el fstree a continuación, pero en algún momento voy a tener que hacerlo dentro para poder dividir por config files también
     const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
+    output.appendLine(`fstree to sync from config files: ${JSON.stringify(configFsTree)}`);
     if (filesFromConfig) {
         exports.allFilesToSync.push(...filesFromConfig);
     }
     if (configFsTree) {
         exports.fsTree.push(configFsTree);
     }
-    output.appendLine(`fstree fstree final: ${JSON.stringify(exports.fsTree)}`);
+    output.appendLine(`\n\nfstree fstree final: ${JSON.stringify(exports.fsTree)}`);
 }
 //# sourceMappingURL=extension.js.map
