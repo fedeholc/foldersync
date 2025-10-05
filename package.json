@@ -15,7 +15,7 @@
     "workspaceContains:package.json",
     "workspaceContains:.git"
   ],
-  "main": "./out/extension.js",
+  "main": "./out/src/extension.js",
   "contributes": {
     "commands": [
       {
