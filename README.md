@@ -74,6 +74,10 @@ Paths in the `foldersync.config.json` file can be absolute or relative to the lo
 7. Create a new file: mapping updates; first save copies it across.
 8. (Optional) Run an initial bulk alignment: execute the command `foldersync.initialSyncLatest` to copy the newest side of every pair onto the older/missing counterpart. This is safe to run multiple times; only differing or absent files are overwritten/created.
 
+### Status Bar Indicator
+
+When the extension is active a left-side status bar item appears labeled `foldersync` with a sync icon. When a file is synchronized (copied after a save) a short-lived message like `Synced myfile.ts` is displayed next to the icon for a few seconds and then reverts to the base label. Clicking the item opens the foldersync view.
+
 ### Initial Sync (Newest Wins)
 
 If you start tracking folders that already contain divergent versions of the same files, you might want a deterministic first reconciliation. Use the command palette and run:

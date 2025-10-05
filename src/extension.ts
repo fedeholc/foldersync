@@ -12,6 +12,7 @@ export let fsTree: FsTreeElement[] = [];
 export let allFilesToSync: FilePairMap = new Map();
 export let fsTreeProvider: FsTreeProvider = new FsTreeProvider(fsTree);
 export const CONFIG_FOLDER_PAIRS_NAME = "folderPairs";
+export let statusBarItem: vscode.StatusBarItem | undefined;
 
 export const output = vscode.window.createOutputChannel(APP_NAME);
 
@@ -22,6 +23,14 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Run startup tasks immediately when extension activates
 	await runStartupTasks();
+
+	// Create status bar item
+	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+	statusBarItem.text = 'foldersync $(sync)';
+	statusBarItem.tooltip = 'foldersync activo';
+	statusBarItem.command = 'foldersync.openView';
+	statusBarItem.show();
+	context.subscriptions.push(statusBarItem);
 
 	// Register tree view provider and create a TreeView so we can react to visibility changes
 	const treeView = vscode.window.createTreeView('foldersync.syncView', { treeDataProvider: fsTreeProvider });

@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.output = exports.CONFIG_FOLDER_PAIRS_NAME = exports.fsTreeProvider = exports.allFilesToSync = exports.fsTree = void 0;
+exports.output = exports.statusBarItem = exports.CONFIG_FOLDER_PAIRS_NAME = exports.fsTreeProvider = exports.allFilesToSync = exports.fsTree = void 0;
 exports.activate = activate;
 exports.deactivate = deactivate;
 exports.runStartupTasks = runStartupTasks;
@@ -56,6 +56,13 @@ async function activate(context) {
     context.subscriptions.push(exports.output);
     // Run startup tasks immediately when extension activates
     await runStartupTasks();
+    // Create status bar item
+    exports.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    exports.statusBarItem.text = 'foldersync $(sync)';
+    exports.statusBarItem.tooltip = 'foldersync activo';
+    exports.statusBarItem.command = 'foldersync.openView';
+    exports.statusBarItem.show();
+    context.subscriptions.push(exports.statusBarItem);
     // Register tree view provider and create a TreeView so we can react to visibility changes
     const treeView = vscode.window.createTreeView('foldersync.syncView', { treeDataProvider: exports.fsTreeProvider });
     context.subscriptions.push(treeView);

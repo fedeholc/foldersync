@@ -4,6 +4,7 @@ import { DEFAULT_CONFIG_FILE_NAME } from "../types/types";
 import { filesEqualByHash } from '../helpers/helpers';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import { flashSyncMessage } from '../helpers/status-bar';
 
 /**
  * Handles the event when a text document is saved. If the saved document is
@@ -57,6 +58,8 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
     try {
       await vscode.workspace.fs.copy(vscode.Uri.file(fileSrc), vscode.Uri.file(fileDest), { overwrite: true });
       output.appendLine(`Synchronized ${fileSrc} -> ${fileDest}`);
+      const fileName = path.basename(fileSrc);
+      flashSyncMessage(`Synced ${fileName}`);
     } catch (err) {
       output.appendLine(`Error al sincronizar ${fileSrc} -> ${fileDest}: ${err}`);
     }
