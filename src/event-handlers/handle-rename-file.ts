@@ -41,7 +41,7 @@ export async function handleDidRenameFiles(event: vscode.FileRenameEvent, allFil
     try {
       await runAsInternal(async () => {
         // Ensure directory exists (should, but be safe)
-        await fs.promises.mkdir(counterpartDir, { recursive: true }).catch(() => {});
+        await fs.promises.mkdir(counterpartDir, { recursive: true }).catch(() => { });
         const stat = await fs.promises.stat(counterpartOld).catch(() => null);
         if (stat && stat.isFile()) {
           await vscode.workspace.fs.rename(vscode.Uri.file(counterpartOld), vscode.Uri.file(counterpartNew), { overwrite: true });

@@ -1,22 +1,28 @@
-# FolderSync
+# foldersync
 
-FolderSync is a Visual Studio Code extension that synchronizes files between folders. It's designed to help you keep the content of two folders in sync, which is useful when you need to share files between two repos, but don't want to use submodules or symlinks or publish a package.
+foldersync is a Visual Studio Code extension that synchronizes files between pairs of folders. It helps you mirror shared code across repositories without submodules, symlinks, or publishing a package.
 
 ## Features
 
-- **Folder Synchronization**: Synchronize the content of two folders. The first synchronization is unidirectional, from source to destination, then it is bidirectional based on the last modification time of the files.
-- **Automatic Synchronization**: Automatically synchronizes files when you save them or when you create new files.
-- **Flexible Configuration**: Configure the folders to sync through the VS Code workspace settings or using a `foldersync.config.json` configuration file.
-- **Tree View**: A dedicated view in the activity bar to visualize the synchronized folders and files.
+- **Recursive Bidirectional Sync on Save**: All files (recursively) inside each configured folder pair are tracked. Saving a file copies it to its counterpart folder if contents differ.
+- **On-Create Mapping Refresh**: Creating a file under a tracked folder updates the mapping; first save triggers the actual copy.
+- **Delete Propagation**: Deleting a tracked file deletes its counterpart.
+- **Rename Propagation**: Renaming a tracked file renames its counterpart to the same basename (overwriting if necessary).
+- **Flexible Configuration**: Configure folder pairs in workspace settings or one/many `foldersync.config.json` files; paths can be relative or absolute.
+- **Tree View**: Activity Bar view groups pairs from workspace settings and each config file; shows relative paths of paired files.
 - **Commands**:
-  - `foldersync.refreshView`: Manually refresh the synchronized folders view.
-  - `foldersync.openView`: Open the FolderSync view.
+  - `foldersync.refreshView` – Rebuild mappings and refresh the tree.
+  - `foldersync.openView` – Focus the foldersync view.
 
-## Warnings
+## Warnings & Safety
 
-The first time you synchronize two folders, all files from the source folder will be copied to the destination folder without any confirmation. If there are files in the destination folder with the same name, they will be overwritten. If there are files in the destination folder that do not exist in the source folder, they will be copied to the source folder.
+- Overwrites are silent: the last saved (or renamed) file wins.
+- Delete and rename propagation is immediate; there is no undo within the extension. Use version control for safety.
+- If you rename a file and a counterpart file with the target name already exists, it will be overwritten.
+- Directory-level renames in VS Code are treated as multiple file rename events; each file rename is propagated individually.
+- No conflict resolution strategy beyond “who saved/renamed last”.
 
-Please ensure that you have backups of any important data before using this extension. Use git so you can revert any unwanted changes.
+Always keep important content under version control before enabling aggressive sync operations.
 
 ## Extension Settings
 
@@ -58,10 +64,34 @@ Paths in the `foldersync.config.json` file can be absolute or relative to the lo
 
 ## Usage
 
-1.  Install the FolderSync extension.
-2.  Configure the folders you want to synchronize using either the workspace settings or a `sync.json` file as described above.
-3.  Open the FolderSync view from the activity bar to see the synchronized folders.
-4.  When you create, modify, or delete a file in one of the synchronized folders, the changes will be automatically reflected in the other folder.
+1. Install the extension.
+2. Configure folder pairs via workspace settings and/or `foldersync.config.json` files.
+3. Open the Activity Bar view (command: `foldersync.openView`) to inspect tracked pairs.
+4. Save a file: its counterpart is created/overwritten if content differs (hash-based comparison avoids redundant copies).
+5. Delete a tracked file: counterpart is deleted.
+6. Rename a tracked file: counterpart renamed (basename aligned, overwrite if exists).
+7. Create a new file: mapping updates; first save copies it across.
+
+### How It Works (Internals)
+
+1. On activation or refresh, each configured folder pair is recursively scanned; relative file paths are unioned.
+2. A bidirectional mapping (A→B and B→A) is stored for every discovered or potential file path (even if only present on one side yet).
+3. On save the extension hashes both files (if counterpart exists) and copies only if different.
+4. Delete & rename events use VS Code’s file system events and apply the operation to the counterpart inside a guarded internal operation (to avoid loops), then rebuild mappings.
+5. The tree view shows groups: `from Workspace` and `from config files` (with per-config-file containers).
+
+### Overwrite Semantics
+
+- Save: Source overwrites destination if hashes differ.
+- Rename: Counterpart is renamed; existing file with same name is replaced.
+- Delete: Counterpart removed if it exists (no trash usage currently).
+
+### Limitations
+
+- No ignore patterns yet (e.g., to skip `node_modules`, binaries, etc.).
+- No conflict detection / merging.
+- No partial sync filters (all files are considered).
+- Potential performance impact on very large trees.
 
 ## Contributing
 
