@@ -56,8 +56,28 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
 
     // Use the documentPath as source, the other as destination
     try {
-      await vscode.workspace.fs.copy(vscode.Uri.file(fileSrc), vscode.Uri.file(fileDest), { overwrite: true });
-      output.appendLine(`Synchronized ${fileSrc} -> ${fileDest}`);
+      const destUri = vscode.Uri.file(fileDest);
+
+      // Check if destination file is already open in editor
+      const openDestDoc = vscode.workspace.textDocuments.find(doc => doc.uri.fsPath === fileDest);
+
+      if (openDestDoc) {
+        // If file is open, use WorkspaceEdit to update its content
+        const edit = new vscode.WorkspaceEdit();
+        const fullRange = new vscode.Range(
+          openDestDoc.lineAt(0).range.start,
+          openDestDoc.lineAt(openDestDoc.lineCount - 1).range.end
+        );
+        edit.replace(destUri, fullRange, document.getText());
+        await vscode.workspace.applyEdit(edit);
+        await openDestDoc.save();
+        output.appendLine(`Synchronized (open document) ${fileSrc} -> ${fileDest}`);
+      } else {
+        // If file is not open, use file system copy
+        await vscode.workspace.fs.copy(vscode.Uri.file(fileSrc), destUri, { overwrite: true });
+        output.appendLine(`Synchronized ${fileSrc} -> ${fileDest}`);
+      }
+
       const fileName = path.basename(fileSrc);
       flashSyncMessage(`Synced ${fileName}`);
     } catch (err) {
