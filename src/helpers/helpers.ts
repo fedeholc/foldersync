@@ -61,7 +61,7 @@ export function normalizeFilesToSync(
     const ra = getAbsoluteFilePath(a, configFileUri);
     const rb = getAbsoluteFilePath(b, configFileUri);
 
-    //TODO: acá hay un problema, si no está el par de archivos no toma nada, pero estaría bien que si hay uno lo tome y cree el otro, habría que ver si acá o al momento de sincronizar
+    //TODO: there is a problem here, if the pair of files is not present it does not take anything, but it would be good if there is one to take it and create the other, we should see if here or at the time of synchronization
     if (!ra || !rb) {
       // Skip invalid entries
       continue;
@@ -206,7 +206,7 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderP
       }
       // Add to fsTree
       const children: FsTreeElement[] = Array.from(normalizedFiles.entries())
-        .filter(([key, value]) => key.startsWith(folderA) && value.startsWith(folderB)) //para no mostrar en el treeview dos veces el mismo par
+        .filter(([key, value]) => key.startsWith(folderA) && value.startsWith(folderB)) //to avoid showing the same pair twice in the treeview
         .map(([key, value]) => ({ name: `${path.basename(key)} <-> ${path.basename(value)}`, type: 'pair' }));
       // if children is empty, add a placeholder
       if (children.length === 0) {
@@ -259,7 +259,7 @@ export async function getFilesToSyncFromConfigFiles(): Promise<{ filesMap: FileP
     children: []
   };
 
-  // recorrer cada carpeta del workspace y ver si tiene un archivo de configuración
+  // iterate over each workspace folder and see if it has a configuration file
   for (const folder of workspaceFolders) {
 
     const folderUri = folder.uri;
@@ -274,7 +274,7 @@ export async function getFilesToSyncFromConfigFiles(): Promise<{ filesMap: FileP
       const jsonFileData = await vscode.workspace.fs.readFile(fileUri);
       const fileData: ConfigFile = JSON.parse(jsonFileData.toString());
 
-      // si el archivo de configuración tiene un array folderPairs, procesarlo
+      // if the configuration file has a folderPairs array, process it
       if (Array.isArray(fileData.folders)) {
         const fsTreeFromFile: FsTreeElement = {
           name: 'from config file: ' + fileUri.fsPath,

@@ -64,12 +64,12 @@ export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
 
   getChildren(element?: FsTreeItem): Thenable<FsTreeItem[]> {
     if (!element) {
-      // Elementos raíz (folders)
+      // Root elements (folders)
       return Promise.resolve(this._myTree.map((d) => new FsTreeItem(d)));
     }
     if (element.item.children) {
       if (element.item.type === "container" || element.item.type === "folder-error" || element.item.type === "folder") {
-        // Hijos de la carpeta
+        // Children of the folder
         return Promise.resolve(
           element.item.children.map((child) => new FsTreeItem(child))
         );
@@ -83,7 +83,7 @@ export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
 
       }
     }
-    // Los archivos no tienen hijos
+    // Files have no children
     return Promise.resolve([]);
   }
 }
