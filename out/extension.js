@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.output = exports.fsTreeProvider = exports.allFilesToSync = exports.fsTree = void 0;
+exports.output = exports.CONFIG_FOLDER_PAIRS_NAME = exports.fsTreeProvider = exports.allFilesToSync = exports.fsTree = void 0;
 exports.activate = activate;
 exports.deactivate = deactivate;
 exports.runStartupTasks = runStartupTasks;
@@ -41,9 +41,11 @@ const vscode = __importStar(require("vscode"));
 const helpers_1 = require("./helpers");
 const syncTree_1 = require("./syncTree");
 const types_1 = require("./types");
+// TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
 exports.fsTree = [];
 exports.allFilesToSync = new Map();
 exports.fsTreeProvider = new syncTree_1.FsTreeProvider(exports.fsTree);
+exports.CONFIG_FOLDER_PAIRS_NAME = "folderPairs";
 exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
 async function activate(context) {
     exports.output.appendLine('foldersync extension activated');
@@ -76,12 +78,12 @@ async function activate(context) {
 function deactivate() { }
 async function runStartupTasks() {
     exports.output.appendLine('Running startup tasks...');
-    const { allFilesToSync: filesFromWorkspace, fsTree: workspaceFsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)();
+    const { filesMap: filesFromWorkspace, fsTree: workspaceFsTree } = await (0, helpers_1.getFilesToSyncFromWorkspace)();
     exports.fsTree = [];
     if (workspaceFsTree) {
         exports.fsTree.push(workspaceFsTree);
     }
-    const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)();
+    const { filesMap: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)();
     if (configFsTree) {
         exports.fsTree.push(configFsTree);
     }

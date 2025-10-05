@@ -1,15 +1,14 @@
 import * as vscode from 'vscode';
-import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspaceSettings, handleDidCreateFiles, handleOnDidSaveTextDocument } from './helpers';
+import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspace, handleDidCreateFiles, handleOnDidSaveTextDocument } from './helpers';
 import { FsTreeProvider, } from './syncTree';
-import { APP_NAME, FsTreeElement, FilePairArray } from './types';
+import { APP_NAME, FsTreeElement, FilePairArray, FolderPairArray, FilePairMap } from './types';
 
 // TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
-
-export type FilePairMap = Map<string, string>;
 
 export let fsTree: FsTreeElement[] = [];
 export let allFilesToSync: FilePairMap = new Map();
 export let fsTreeProvider: FsTreeProvider = new FsTreeProvider(fsTree);
+export const CONFIG_FOLDER_PAIRS_NAME = "folderPairs";
 
 
 export const output = vscode.window.createOutputChannel(APP_NAME);
@@ -60,7 +59,7 @@ export function deactivate() { }
 export async function runStartupTasks() {
 
 	output.appendLine('Running startup tasks...');
-	const { allFilesToSync: filesFromWorkspace, fsTree: workspaceFsTree } = await getFilesToSyncFromWorkspaceSettings( );
+	const { filesMap: filesFromWorkspace, fsTree: workspaceFsTree } = await getFilesToSyncFromWorkspace();
 
 	fsTree = [];
 
@@ -68,7 +67,7 @@ export async function runStartupTasks() {
 		fsTree.push(workspaceFsTree);
 	}
 
-	const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles();
+	const { filesMap: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles();
 
 
 	if (configFsTree) {
