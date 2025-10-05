@@ -28,13 +28,16 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(treeView);
 
 	// Register command to refresh the tree view
-	context.subscriptions.push(vscode.commands.registerCommand('foldersync.refreshView', () => fsTreeProvider?.refresh()));
-
-	// Register command to reveal the tree view
-	context.subscriptions.push(vscode.commands.registerCommand('foldersync.revealView', async () => {
-		await vscode.commands.executeCommand('workbench.view.explorer');
+	context.subscriptions.push(vscode.commands.registerCommand('foldersync.refreshView', async () => {
+		await runStartupTasks(output);
+		fsTreeProvider?.refresh();
 	}));
 
+	// Register command to open the foldersync tree view
+	context.subscriptions.push(vscode.commands.registerCommand('foldersync.openView', () => {
+		// Open the view container registered in package.json (id: foldersync_container)
+		vscode.commands.executeCommand('workbench.view.extension.foldersync_container');
+	}));
 
 
 	// Listen for file save events
@@ -65,8 +68,6 @@ export async function runStartupTasks(output: vscode.OutputChannel) {
 		fsTree.push(workspaceFsTree);
 	}
 
-
-	//TODO: hay que hacer que cuando busca las folders si no existe no las excluya, sino que las incluya pero ver cómo, para mostrar el error.
 	const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles(output);
 
 

@@ -55,10 +55,14 @@ async function activate(context) {
     const treeView = vscode.window.createTreeView('foldersync.syncView', { treeDataProvider: exports.fsTreeProvider });
     context.subscriptions.push(treeView);
     // Register command to refresh the tree view
-    context.subscriptions.push(vscode.commands.registerCommand('foldersync.refreshView', () => exports.fsTreeProvider?.refresh()));
-    // Register command to reveal the tree view
-    context.subscriptions.push(vscode.commands.registerCommand('foldersync.revealView', async () => {
-        await vscode.commands.executeCommand('workbench.view.explorer');
+    context.subscriptions.push(vscode.commands.registerCommand('foldersync.refreshView', async () => {
+        await runStartupTasks(exports.output);
+        exports.fsTreeProvider?.refresh();
+    }));
+    // Register command to open the foldersync tree view
+    context.subscriptions.push(vscode.commands.registerCommand('foldersync.openView', () => {
+        // Open the view container registered in package.json (id: foldersync_container)
+        vscode.commands.executeCommand('workbench.view.extension.foldersync_container');
     }));
     // Listen for file save events
     const saveListener = vscode.workspace.onDidSaveTextDocument((document) => (0, helpers_1.handleOnDidSaveTextDocument)(document, exports.allFilesToSync));
@@ -77,7 +81,6 @@ async function runStartupTasks(output) {
     if (workspaceFsTree) {
         exports.fsTree.push(workspaceFsTree);
     }
-    //TODO: hay que hacer que cuando busca las folders si no existe no las excluya, sino que las incluya pero ver cómo, para mostrar el error.
     const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
     if (configFsTree) {
         exports.fsTree.push(configFsTree);

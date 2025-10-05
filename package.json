@@ -19,16 +19,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "foldersync.showSyncPanel",
-        "title": "foldersync: Show Sync Panel"
-      },
-      {
         "command": "foldersync.refreshView",
         "title": "foldersync: Refresh View"
       },
       {
-        "command": "foldersync.revealView",
-        "title": "foldersync: Reveal View"
+        "command": "foldersync.openView",
+        "title": "foldersync: Open View"
       }
     ],
     "viewsContainers": {
