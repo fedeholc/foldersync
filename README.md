@@ -1,4 +1,4 @@
-# foldersync
+# foldersync - vscode extension
 
 foldersync is a Visual Studio Code extension that synchronizes files between pairs of folders. It helps you mirror shared code across repositories without submodules, symlinks, or publishing a package.
 
