@@ -61,7 +61,6 @@ export function normalizeFilesToSync(
     const ra = getAbsoluteFilePath(a, configFileUri);
     const rb = getAbsoluteFilePath(b, configFileUri);
 
-    //TODO: there is a problem here, if the pair of files is not present it does not take anything, but it would be good if there is one to take it and create the other, we should see if here or at the time of synchronization
     if (!ra || !rb) {
       // Skip invalid entries
       continue;
@@ -119,9 +118,7 @@ function getAbsoluteFilePath(
     const baseDir = path.dirname(configFileUri.fsPath);
     const baseUri = vscode.Uri.file(baseDir);
     const resolved = vscode.Uri.joinPath(baseUri, filePath).fsPath;
-    if (fs.existsSync(resolved)) {
-      return resolved;
-    }
+
     return resolved;
   } catch (err) {
     // ignore and continue to fallback
