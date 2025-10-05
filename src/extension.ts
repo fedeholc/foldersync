@@ -4,6 +4,8 @@ import { FsTreeProvider, } from './fs-tree/fs-tree';
 import { APP_NAME, FsTreeElement, FilePairArray, FolderPairArray, FilePairMap } from './types/types';
 import { handleOnDidSaveTextDocument } from './event-handlers/handle-save-doc';
 import { handleDidCreateFiles } from './event-handlers/handle-create-file';
+import { handleDidDeleteFiles } from './event-handlers/handle-delete-file';
+import { handleDidRenameFiles } from './event-handlers/handle-rename-file';
 
 export let fsTree: FsTreeElement[] = [];
 export let allFilesToSync: FilePairMap = new Map();
@@ -40,9 +42,18 @@ export async function activate(context: vscode.ExtensionContext) {
 	const saveListener = vscode.workspace.onDidSaveTextDocument((document) => handleOnDidSaveTextDocument(document, allFilesToSync));
 	context.subscriptions.push(saveListener);
 
+
 	// Listen for new file creation events
 	const saveNewFileListener = vscode.workspace.onDidCreateFiles(handleDidCreateFiles);
 	context.subscriptions.push(saveNewFileListener);
+
+	// Listen for deletions
+	const deleteListener = vscode.workspace.onDidDeleteFiles((e) => handleDidDeleteFiles(e, allFilesToSync));
+	context.subscriptions.push(deleteListener);
+
+	// Listen for renames
+	const renameListener = vscode.workspace.onDidRenameFiles((e) => handleDidRenameFiles(e, allFilesToSync));
+	context.subscriptions.push(renameListener);
 
 	// Update tree provider after startup tasks resolved
 	fsTreeProvider?.setTree(fsTree);

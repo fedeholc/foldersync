@@ -43,6 +43,8 @@ const fs_tree_1 = require("./fs-tree/fs-tree");
 const types_1 = require("./types/types");
 const handle_save_doc_1 = require("./event-handlers/handle-save-doc");
 const handle_create_file_1 = require("./event-handlers/handle-create-file");
+const handle_delete_file_1 = require("./event-handlers/handle-delete-file");
+const handle_rename_file_1 = require("./event-handlers/handle-rename-file");
 exports.fsTree = [];
 exports.allFilesToSync = new Map();
 exports.fsTreeProvider = new fs_tree_1.FsTreeProvider(exports.fsTree);
@@ -72,6 +74,12 @@ async function activate(context) {
     // Listen for new file creation events
     const saveNewFileListener = vscode.workspace.onDidCreateFiles(handle_create_file_1.handleDidCreateFiles);
     context.subscriptions.push(saveNewFileListener);
+    // Listen for deletions
+    const deleteListener = vscode.workspace.onDidDeleteFiles((e) => (0, handle_delete_file_1.handleDidDeleteFiles)(e, exports.allFilesToSync));
+    context.subscriptions.push(deleteListener);
+    // Listen for renames
+    const renameListener = vscode.workspace.onDidRenameFiles((e) => (0, handle_rename_file_1.handleDidRenameFiles)(e, exports.allFilesToSync));
+    context.subscriptions.push(renameListener);
     // Update tree provider after startup tasks resolved
     exports.fsTreeProvider?.setTree(exports.fsTree);
 }
