@@ -37,7 +37,7 @@
         {
           "id": "foldersync_container",
           "title": "foldersync",
-          "icon": "resources/icons/filesync2.svg"
+          "icon": "resources/icons/filesync2.png"
         }
       ]
     },
@@ -46,7 +46,7 @@
         {
           "id": "foldersync.syncView",
           "name": "foldersync",
-          "icon": "resources/icons/filesync2.svg"
+          "icon": "resources/icons/filesync2.png"
         }
       ]
     },
