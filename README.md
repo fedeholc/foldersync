@@ -1,10 +1,6 @@
 # FolderSync
 
-FolderSync is a Visual Studio Code extension that synchronizes files between folders. It's designed to help you keep the content of two folders in sync, which is useful for a variety of development workflows, such as:
-
-- Working with build processes where you need to copy files from a source to a destination folder.
-- Synchronizing configuration files between different projects.
-- When you need to share files between two repos, but don't want to use submodules or symlinks or publish a package.
+FolderSync is a Visual Studio Code extension that synchronizes files between folders. It's designed to help you keep the content of two folders in sync, which is useful when you need to share files between two repos, but don't want to use submodules or symlinks or publish a package.
 
 ## Features
 
