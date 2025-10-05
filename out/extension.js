@@ -41,8 +41,7 @@ const vscode = __importStar(require("vscode"));
 const helpers_1 = require("./helpers");
 const syncTree_1 = require("./syncTree");
 const types_1 = require("./types");
-// TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
-exports.allFilesToSync = [];
+exports.allFilesToSync = new Map();
 exports.fsTree = [];
 exports.fsTreeProvider = null;
 exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
@@ -62,28 +61,29 @@ async function activate(context) {
         await vscode.commands.executeCommand('workbench.view.explorer');
     }));
     // Listen for file save events
-    const saveListener = vscode.workspace.onDidSaveTextDocument(helpers_1.handleOnDidSaveTextDocument);
+    const saveListener = vscode.workspace.onDidSaveTextDocument((document) => (0, helpers_1.handleOnDidSaveTextDocument)(document, exports.allFilesToSync));
     context.subscriptions.push(saveListener);
     // Listen for new file creation events
     const saveNewFileListener = vscode.workspace.onDidCreateFiles(helpers_1.handleDidCreateFiles);
     context.subscriptions.push(saveNewFileListener);
     // Update tree provider after startup tasks resolved
     exports.fsTreeProvider?.setTree(exports.fsTree);
-    //output.appendLine(`\n\n\n\nfsTree	post task: ${JSON.stringify(fsTree)}`);
 }
 // This method is called when your extension is deactivated
 function deactivate() { }
 async function runStartupTasks(output) {
     output.appendLine('Running startup tasks...');
-    ({ allFilesToSync: exports.allFilesToSync, fsTree: exports.fsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output));
+    const { allFilesToSync: filesFromWorkspace, fsTree: workspaceFsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output);
+    if (workspaceFsTree) {
+        exports.fsTree.push(workspaceFsTree);
+    }
     //TODO: hay que hacer que cuando busca las folders si no existe no las excluya, sino que las incluya pero ver cómo, para mostrar el error.
     const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
-    if (filesFromConfig) {
-        exports.allFilesToSync.push(...filesFromConfig);
-    }
     if (configFsTree) {
         exports.fsTree.push(configFsTree);
     }
+    exports.allFilesToSync = new Map([...filesFromWorkspace, ...filesFromConfig]);
+    output.appendLine(`Total files to sync: ${exports.allFilesToSync.size}`);
     exports.fsTreeProvider?.setTree(exports.fsTree);
 }
 //# sourceMappingURL=extension.js.map

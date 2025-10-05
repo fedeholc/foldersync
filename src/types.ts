@@ -9,13 +9,13 @@ export const SETTINGS_NAMES = {
 
 export const DEFAULT_CONFIG_FILE_NAME = 'foldersync.config.json' as const;
 
-export type FilePairsArray = [string, string][];
-export type FolderPairsArray = [string, string][];
+export type FilePairArray = [string, string][];
+export type FolderPairArray = [string, string][];
 
 export type Settings = {
   [SETTINGS_NAMES.globalEnabled]: boolean;
-  [SETTINGS_NAMES.filesToSync]: FilePairsArray;
-  [SETTINGS_NAMES.folderPairs]: FolderPairsArray;
+  [SETTINGS_NAMES.filesToSync]: FilePairArray;
+  [SETTINGS_NAMES.folderPairs]: FolderPairArray;
 };
 
 export type FsTreeElement = {
