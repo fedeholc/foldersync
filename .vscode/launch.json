@@ -33,7 +33,7 @@
       "request": "launch",
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
-        "--extensionTestsPath=${workspaceFolder}/out/tests-integration/suite/index.js"
+        "--extensionTestsPath=${workspaceFolder}/out/tests/tests-integration/suite/index.js"
       ],
       "outFiles": ["${workspaceFolder}/out/**/*.js"],
       "preLaunchTask": "${defaultBuildTask}"
