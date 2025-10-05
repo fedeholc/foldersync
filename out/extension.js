@@ -45,6 +45,7 @@ const handle_save_doc_1 = require("./event-handlers/handle-save-doc");
 const handle_create_file_1 = require("./event-handlers/handle-create-file");
 const handle_delete_file_1 = require("./event-handlers/handle-delete-file");
 const handle_rename_file_1 = require("./event-handlers/handle-rename-file");
+const initial_sync_1 = require("./event-handlers/initial-sync");
 exports.fsTree = [];
 exports.allFilesToSync = new Map();
 exports.fsTreeProvider = new fs_tree_1.FsTreeProvider(exports.fsTree);
@@ -67,6 +68,11 @@ async function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('foldersync.openView', () => {
         // Open the view container registered in package.json (id: foldersync_container)
         vscode.commands.executeCommand('workbench.view.extension.foldersync_container');
+    }));
+    // Register initial sync command (newest file wins per pair)
+    context.subscriptions.push(vscode.commands.registerCommand('foldersync.initialSyncLatest', async () => {
+        exports.output.appendLine('Executing initial sync (newest wins)...');
+        await (0, initial_sync_1.initialSyncLatest)(exports.allFilesToSync);
     }));
     // Listen for file save events
     const saveListener = vscode.workspace.onDidSaveTextDocument((document) => (0, handle_save_doc_1.handleOnDidSaveTextDocument)(document, exports.allFilesToSync));

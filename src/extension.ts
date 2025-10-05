@@ -6,6 +6,7 @@ import { handleOnDidSaveTextDocument } from './event-handlers/handle-save-doc';
 import { handleDidCreateFiles } from './event-handlers/handle-create-file';
 import { handleDidDeleteFiles } from './event-handlers/handle-delete-file';
 import { handleDidRenameFiles } from './event-handlers/handle-rename-file';
+import { initialSyncLatest } from './event-handlers/initial-sync';
 
 export let fsTree: FsTreeElement[] = [];
 export let allFilesToSync: FilePairMap = new Map();
@@ -36,6 +37,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('foldersync.openView', () => {
 		// Open the view container registered in package.json (id: foldersync_container)
 		vscode.commands.executeCommand('workbench.view.extension.foldersync_container');
+	}));
+
+	// Register initial sync command (newest file wins per pair)
+	context.subscriptions.push(vscode.commands.registerCommand('foldersync.initialSyncLatest', async () => {
+		output.appendLine('Executing initial sync (newest wins)...');
+		await initialSyncLatest(allFilesToSync);
 	}));
 
 	// Listen for file save events

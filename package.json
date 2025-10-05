@@ -25,6 +25,11 @@
       {
         "command": "foldersync.openView",
         "title": "foldersync: Open View"
+      },
+      {
+        "command": "foldersync.initialSyncLatest",
+        "title": "foldersync: Initial Sync (Newest Wins)",
+        "category": "foldersync"
       }
     ],
     "viewsContainers": {

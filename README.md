@@ -13,6 +13,7 @@ foldersync is a Visual Studio Code extension that synchronizes files between pai
 - **Commands**:
   - `foldersync.refreshView` – Rebuild mappings and refresh the tree.
   - `foldersync.openView` – Focus the foldersync view.
+  - `foldersync.initialSyncLatest` – Perform a one-off initial sync where, for every tracked pair, the most recently modified file overwrites the older (or creates the missing counterpart). Useful as a first alignment before regular save-based sync.
 
 ## Warnings & Safety
 
@@ -71,6 +72,22 @@ Paths in the `foldersync.config.json` file can be absolute or relative to the lo
 5. Delete a tracked file: counterpart is deleted.
 6. Rename a tracked file: counterpart renamed (basename aligned, overwrite if exists).
 7. Create a new file: mapping updates; first save copies it across.
+8. (Optional) Run an initial bulk alignment: execute the command `foldersync.initialSyncLatest` to copy the newest side of every pair onto the older/missing counterpart. This is safe to run multiple times; only differing or absent files are overwritten/created.
+
+### Initial Sync (Newest Wins)
+
+If you start tracking folders that already contain divergent versions of the same files, you might want a deterministic first reconciliation. Use the command palette and run:
+
+`foldersync: Initial Sync (Newest Wins)`
+
+Behavior per logical pair (fileA, fileB):
+
+- Only one exists: it is copied to create the missing counterpart.
+- Both exist with different modified times: the newer (by mtime) overwrites the older.
+- Both exist with (roughly) identical mtimes (difference < ~5ms): skipped to avoid unnecessary churn.
+- Copy operations ensure destination directories exist.
+
+This command does not delete anything nor attempts merge/conflict resolution; it simply enforces "newest timestamp wins".
 
 ### How It Works (Internals)
 
