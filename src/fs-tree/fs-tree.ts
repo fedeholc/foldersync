@@ -1,6 +1,13 @@
 import * as vscode from 'vscode';
 import { FsTreeElement } from '../types/types';
 
+/**
+ * Represents an item in the file synchronization tree view.
+ * It extends the TreeItem class from VSCode and includes additional properties 
+ * specific to the synchronization context.
+ * Each item can represent a folder, a file pair, or a container.
+ * The item type determines its icon and behavior in the tree view. 
+ */
 class FsTreeItem extends vscode.TreeItem {
   constructor(public readonly item: FsTreeElement) {
     super(
@@ -23,7 +30,14 @@ class FsTreeItem extends vscode.TreeItem {
   }
 }
 
-
+/**
+ * Provides data for the file synchronization tree view in the VSCode sidebar.
+ * It implements the TreeDataProvider interface to supply tree items and their
+ * hierarchical structure. The tree displays folders and file pairs that are
+ * configured for synchronization.
+ * The tree supports dynamic updates and refreshes when the underlying data
+ * changes.
+ */
 export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
   getTreeItem(element: FsTreeItem): vscode.TreeItem {
     return element;
@@ -47,8 +61,6 @@ export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
   refresh(): void {
     this._onDidChangeTreeData.fire();
   }
-
-
 
   getChildren(element?: FsTreeItem): Thenable<FsTreeItem[]> {
     if (!element) {

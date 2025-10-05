@@ -71,6 +71,14 @@ export function normalizeFilesToSync(
   return normalized;
 }
 
+/**
+ * Normalizes an array of folder pairs to sync by resolving their paths.
+ * Normalization means: if a path is relative, it will be resolved against the
+ * config file location. 
+ * @param folders Array of folder pairs to sync 
+ * @param configFileUri The URI of the config file (or workspace file) to resolve relative paths against 
+ * @returns Normalized array of folder pairs 
+ */
 export function normalizeFolders(
   folders: FolderPairArray,
   configFileUri: vscode.Uri
@@ -120,8 +128,6 @@ function getAbsoluteFilePath(
     return null;
   }
 }
-
-
 
 /**
  * Gets the list of files to sync from the workspace settings. The file paths
@@ -296,7 +302,7 @@ export async function getFilesToSyncFromConfigFiles(): Promise<{ filesMap: FileP
 /**
  * Checks if a file exists at the given URI.
  * @param uri The URI of the file to check
- * @returns 
+ * @returns True if the file exists, false otherwise 
  */
 async function checkFileExists(uri: vscode.Uri): Promise<boolean> {
   try {

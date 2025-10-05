@@ -5,13 +5,10 @@ import { APP_NAME, FsTreeElement, FilePairArray, FolderPairArray, FilePairMap } 
 import { handleOnDidSaveTextDocument } from './event-handlers/handle-save-doc';
 import { handleDidCreateFiles } from './event-handlers/handle-create-file';
 
-// TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
-
 export let fsTree: FsTreeElement[] = [];
 export let allFilesToSync: FilePairMap = new Map();
 export let fsTreeProvider: FsTreeProvider = new FsTreeProvider(fsTree);
 export const CONFIG_FOLDER_PAIRS_NAME = "folderPairs";
-
 
 export const output = vscode.window.createOutputChannel(APP_NAME);
 
@@ -24,7 +21,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	await runStartupTasks();
 
 	// Register tree view provider and create a TreeView so we can react to visibility changes
-
 	const treeView = vscode.window.createTreeView('foldersync.syncView', { treeDataProvider: fsTreeProvider });
 	context.subscriptions.push(treeView);
 
@@ -40,7 +36,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('workbench.view.extension.foldersync_container');
 	}));
 
-
 	// Listen for file save events
 	const saveListener = vscode.workspace.onDidSaveTextDocument((document) => handleOnDidSaveTextDocument(document, allFilesToSync));
 	context.subscriptions.push(saveListener);
@@ -49,15 +44,23 @@ export async function activate(context: vscode.ExtensionContext) {
 	const saveNewFileListener = vscode.workspace.onDidCreateFiles(handleDidCreateFiles);
 	context.subscriptions.push(saveNewFileListener);
 
-
 	// Update tree provider after startup tasks resolved
 	fsTreeProvider?.setTree(fsTree);
 }
 
-// This method is called when your extension is deactivated
+// This method is called when the extension is deactivated
 export function deactivate() { }
 
 
+/**
+ * Runs the startup tasks to initialize the file synchronization settings.
+ * It reads the workspace and configuration files to determine which files
+ * and folders need to be synchronized. It updates the global allFilesToSync
+ * map and the fsTree structure used by the tree view provider. 
+ * If any errors occur during the process, they are logged to the output 
+ * channel.
+ * @returns {Promise<void>}
+ */
 export async function runStartupTasks() {
 
 	output.appendLine('Running startup tasks...');
@@ -70,7 +73,6 @@ export async function runStartupTasks() {
 	}
 
 	const { filesMap: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles();
-
 
 	if (configFsTree) {
 		fsTree.push(configFsTree);

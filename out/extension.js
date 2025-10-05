@@ -43,7 +43,6 @@ const fs_tree_1 = require("./fs-tree/fs-tree");
 const types_1 = require("./types/types");
 const handle_save_doc_1 = require("./event-handlers/handle-save-doc");
 const handle_create_file_1 = require("./event-handlers/handle-create-file");
-// TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
 exports.fsTree = [];
 exports.allFilesToSync = new Map();
 exports.fsTreeProvider = new fs_tree_1.FsTreeProvider(exports.fsTree);
@@ -76,8 +75,17 @@ async function activate(context) {
     // Update tree provider after startup tasks resolved
     exports.fsTreeProvider?.setTree(exports.fsTree);
 }
-// This method is called when your extension is deactivated
+// This method is called when the extension is deactivated
 function deactivate() { }
+/**
+ * Runs the startup tasks to initialize the file synchronization settings.
+ * It reads the workspace and configuration files to determine which files
+ * and folders need to be synchronized. It updates the global allFilesToSync
+ * map and the fsTree structure used by the tree view provider.
+ * If any errors occur during the process, they are logged to the output
+ * channel.
+ * @returns {Promise<void>}
+ */
 async function runStartupTasks() {
     exports.output.appendLine('Running startup tasks...');
     const { filesMap: filesFromWorkspace, fsTree: workspaceFsTree } = await (0, helpers_1.getFilesToSyncFromWorkspace)();

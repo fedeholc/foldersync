@@ -3,7 +3,15 @@ import * as vscode from 'vscode';
 import { allFilesToSync, output, runStartupTasks } from "../extension";
 import { DEFAULT_CONFIG_FILE_NAME } from "../types/types";
 
-export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
+/**
+ * Handles the event when new files are created in the workspace. If any of the
+ * created files is a configuration file or is located in a folder that is 
+ * being synced, it triggers a re-run of the startup tasks to update the 
+ * synchronization settings. 
+ * @param event The file creation event containing details of the created files
+ * @returns {Promise<void>}  
+ */
+export async function handleDidCreateFiles(event: vscode.FileCreateEvent): Promise<void> {
 
   // Check if any of the created files is a config file
   if (event.files.some(file => file.path.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || file.path.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`))) {
