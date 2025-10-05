@@ -7,11 +7,11 @@
   "icon": "resources/icons/foldersync.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/fedeholc/temp-filesync.git"
+    "url": "https://github.com/fedeholc/foldersync.git"
   },
-  "homepage": "https://github.com/fedeholc/temp-filesync#readme",
+  "homepage": "https://github.com/fedeholc/foldersync#readme",
   "bugs": {
-    "url": "https://github.com/fedeholc/temp-filesync/issues"
+    "url": "https://github.com/fedeholc/foldersync/issues"
   },
   "keywords": [
     "sync",
