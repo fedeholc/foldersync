@@ -61,7 +61,7 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
       const fileName = path.basename(fileSrc);
       flashSyncMessage(`Synced ${fileName}`);
     } catch (err) {
-      output.appendLine(`Error al sincronizar ${fileSrc} -> ${fileDest}: ${err}`);
+      output.appendLine(`Error synchronizing ${fileSrc} -> ${fileDest}: ${err}`);
     }
   } else {
     output.appendLine(`Files are identical by hash. No action taken for ${fileSrc} -> ${fileDest}`);

@@ -27,7 +27,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Create status bar item
 	statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
 	statusBarItem.text = 'foldersync $(sync)';
-	statusBarItem.tooltip = 'foldersync activo';
+	statusBarItem.tooltip = 'foldersync active';
 	statusBarItem.command = 'foldersync.openView';
 	statusBarItem.show();
 	context.subscriptions.push(statusBarItem);

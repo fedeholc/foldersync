@@ -14,7 +14,7 @@ import { runAsInternal } from './internal-flags';
  */
 export async function initialSyncLatest(allFilesToSync: Map<string, string>): Promise<void> {
   if (allFilesToSync.size === 0) {
-    vscode.window.showInformationMessage('foldersync: No hay archivos configurados para sincronizar.');
+    vscode.window.showInformationMessage('foldersync: No files configured for synchronization.');
     return;
   }
 
@@ -49,14 +49,14 @@ export async function initialSyncLatest(allFilesToSync: Map<string, string>): Pr
         if (aStat && !bStat) {
           await ensureDir(path.dirname(b));
           await vscode.workspace.fs.copy(vscode.Uri.file(a), vscode.Uri.file(b), { overwrite: true });
-          output.appendLine(`[initialSync] Copiado (solo existía A) ${a} -> ${b}`);
+          output.appendLine(`[initialSync] Copied (only A existed) ${a} -> ${b}`);
           copiedCount++;
           continue;
         }
         if (!aStat && bStat) {
           await ensureDir(path.dirname(a));
           await vscode.workspace.fs.copy(vscode.Uri.file(b), vscode.Uri.file(a), { overwrite: true });
-          output.appendLine(`[initialSync] Copiado (solo existía B) ${b} -> ${a}`);
+          output.appendLine(`[initialSync] Copied (only B existed) ${b} -> ${a}`);
           copiedCount++;
           continue;
         }
@@ -79,12 +79,12 @@ export async function initialSyncLatest(allFilesToSync: Map<string, string>): Pr
           if (shouldCopy) {
             await ensureDir(path.dirname(older));
             await vscode.workspace.fs.copy(vscode.Uri.file(newer), vscode.Uri.file(older), { overwrite: true });
-            output.appendLine(`[initialSync] Copiado más reciente ${newer} -> ${older}`);
+            output.appendLine(`[initialSync] Copied newer ${newer} -> ${older}`);
             copiedCount++;
           }
         }
       } catch (err: any) {
-        const msg = `[initialSync] Error procesando par ${a} <-> ${b}: ${err?.message || err}`;
+        const msg = `[initialSync] Error processing pair ${a} <-> ${b}: ${err?.message || err}`;
         output.appendLine(msg);
         errors.push(msg);
       }
@@ -92,9 +92,9 @@ export async function initialSyncLatest(allFilesToSync: Map<string, string>): Pr
   });
 
   if (errors.length > 0) {
-    vscode.window.showWarningMessage(`foldersync: Sincronización inicial completada con errores. Copiados: ${copiedCount}. Errores: ${errors.length}. Ver canal de salida.`);
+    vscode.window.showWarningMessage(`foldersync: Initial synchronization completed with errors. Copied: ${copiedCount}. Errors: ${errors.length}. See output channel.`);
   } else {
-    vscode.window.showInformationMessage(`foldersync: Sincronización inicial completada. Archivos copiados: ${copiedCount}.`);
+    vscode.window.showInformationMessage(`foldersync: Initial synchronization completed. Files copied: ${copiedCount}.`);
   }
 }
 
