@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
-import { FsTreeElement } from './types';
-
-export type SyncPair = { a: string; b: string };
+import { FsTreeElement } from '../types/types';
 
 class FsTreeItem extends vscode.TreeItem {
   constructor(public readonly item: FsTreeElement) {

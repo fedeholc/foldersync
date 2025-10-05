@@ -38,13 +38,15 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 exports.runStartupTasks = runStartupTasks;
 const vscode = __importStar(require("vscode"));
-const helpers_1 = require("./helpers");
-const syncTree_1 = require("./syncTree");
-const types_1 = require("./types");
+const helpers_1 = require("./helpers/helpers");
+const fs_tree_1 = require("./fs-tree/fs-tree");
+const types_1 = require("./types/types");
+const handle_save_doc_1 = require("./event-handlers/handle-save-doc");
+const handle_create_file_1 = require("./event-handlers/handle-create-file");
 // TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
 exports.fsTree = [];
 exports.allFilesToSync = new Map();
-exports.fsTreeProvider = new syncTree_1.FsTreeProvider(exports.fsTree);
+exports.fsTreeProvider = new fs_tree_1.FsTreeProvider(exports.fsTree);
 exports.CONFIG_FOLDER_PAIRS_NAME = "folderPairs";
 exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
 async function activate(context) {
@@ -66,10 +68,10 @@ async function activate(context) {
         vscode.commands.executeCommand('workbench.view.extension.foldersync_container');
     }));
     // Listen for file save events
-    const saveListener = vscode.workspace.onDidSaveTextDocument((document) => (0, helpers_1.handleOnDidSaveTextDocument)(document, exports.allFilesToSync));
+    const saveListener = vscode.workspace.onDidSaveTextDocument((document) => (0, handle_save_doc_1.handleOnDidSaveTextDocument)(document, exports.allFilesToSync));
     context.subscriptions.push(saveListener);
     // Listen for new file creation events
-    const saveNewFileListener = vscode.workspace.onDidCreateFiles(helpers_1.handleDidCreateFiles);
+    const saveNewFileListener = vscode.workspace.onDidCreateFiles(handle_create_file_1.handleDidCreateFiles);
     context.subscriptions.push(saveNewFileListener);
     // Update tree provider after startup tasks resolved
     exports.fsTreeProvider?.setTree(exports.fsTree);

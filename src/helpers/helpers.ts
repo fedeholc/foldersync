@@ -1,60 +1,11 @@
-import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, FsTreeElement, CONFIG_NAMES, FilePairArray, FolderPairArray, ConfigFile } from "./types";
+import { APP_NAME, DEFAULT_CONFIG_FILE_NAME, FsTreeElement, CONFIG_NAMES, FilePairArray, FolderPairArray, ConfigFile } from "../types/types";
 import * as vscode from 'vscode';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { createHash } from 'node:crypto';
-import { allFilesToSync, fsTree, fsTreeProvider, output, runStartupTasks, } from "./extension";
-import { FilePairMap } from "./types";
+import { allFilesToSync, fsTree, fsTreeProvider, output, runStartupTasks, } from "../extension";
+import { FilePairMap } from "../types/types";
 
-export async function handleOnDidSaveTextDocument(document: vscode.TextDocument, allFilesToSync: Map<string, string>) {
-
-  const documentPath = document.uri.fsPath;
-  output.appendLine(`Document saved: ${documentPath}`);
-
-
-  // if saved file is a config file or workspace file, re-run startup tasks
-  if (documentPath.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || documentPath.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`) || documentPath.endsWith('.code-workspace')) {
-    output.appendLine('Detected save of a config file or workspace settings file. Re-running startup tasks...');
-    await runStartupTasks();
-    return;
-  }
-
-
-  if (allFilesToSync.size === 0) {
-    output.appendLine('No files to sync configured. Skipping.');
-    return;
-  }
-
-  if (!allFilesToSync.get(documentPath)) {
-    output.appendLine('Saved document is not in the sync list. Skipping.');
-    return;
-  }
-
-  const fileSrc = documentPath;
-  const fileDest = allFilesToSync.get(documentPath)!;
-
-
-  // Check if files are different by hash. It's important to avoid
-  // infinite loops of synchronization.
-  const isSameHash = await filesEqualByHash(fileSrc, fileDest);
-
-  if (!isSameHash) {
-    //Use the documentPath as source, the other as destination
-
-    try {
-      await vscode.workspace.fs.copy(vscode.Uri.file(fileSrc), vscode.Uri.file(fileDest), { overwrite: true });
-
-      output.appendLine(`Synchronized ${fileSrc} -> ${fileDest}`);
-    } catch (err) {
-      output.appendLine(`Error al sincronizar ${fileSrc} -> ${fileDest}: ${err}`);
-    }
-  } else {
-    output.appendLine(`Files are identical by hash. No action taken for ${fileSrc} -> ${fileDest}`);
-  }
-
-
-
-}
 
 /**
  * Hashes a file using SHA-256.
@@ -211,6 +162,12 @@ export async function getFilesToSyncFromWorkspace(): Promise<{ filesMap: FilePai
 
 }
 
+/**
+ *  Given an array of folder pairs, reads the files in each folder and creates a map of file pairs to sync.
+ * @param normalizedFolders Array of normalized folder pairs 
+ * @param output Output channel for logging 
+ * @returns An object containing the map of file pairs to sync and the corresponding fsTree structure 
+ */
 async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderPairArray, output: vscode.OutputChannel) {
   const normalizedFiles: FilePairMap = new Map();
   const fsTree: FsTreeElement[] = [];
@@ -336,6 +293,11 @@ export async function getFilesToSyncFromConfigFiles(): Promise<{ filesMap: FileP
 
 }
 
+/**
+ * Checks if a file exists at the given URI.
+ * @param uri The URI of the file to check
+ * @returns 
+ */
 async function checkFileExists(uri: vscode.Uri): Promise<boolean> {
   try {
     await vscode.workspace.fs.stat(uri);
@@ -345,30 +307,3 @@ async function checkFileExists(uri: vscode.Uri): Promise<boolean> {
   }
 }
 
-export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
-
-  // Check if any of the created files is a config file
-  if (event.files.some(file => file.path.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || file.path.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`))) {
-    output.appendLine('Detected creation of a new config file. Re-running startup tasks...');
-    await runStartupTasks();
-
-
-  }
-
-  // Check if any of the created files is a workspace settings file
-  if (event.files.some(file => file.path.endsWith('.code-workspace'))) {
-    output.appendLine('Detected creation of a new workspace settings file. Re-running startup tasks...');
-    await runStartupTasks();
-
-
-  }
-
-  // check if any of the created files is in a folder that is being synced
-  const foldersToSync = Array.from(allFilesToSync).map(pair => pair[0].substring(0, pair[0].lastIndexOf('/')));
-  if (event.files.some(file => foldersToSync.some(folder => file.path.startsWith(folder)))) {
-    output.appendLine('Detected creation of a new file in a synced folder. Re-running startup tasks...');
-    await runStartupTasks();
-
-
-  }
-}

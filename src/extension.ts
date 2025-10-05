@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
-import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspace, handleDidCreateFiles, handleOnDidSaveTextDocument } from './helpers';
-import { FsTreeProvider, } from './syncTree';
-import { APP_NAME, FsTreeElement, FilePairArray, FolderPairArray, FilePairMap } from './types';
+import { getFilesToSyncFromConfigFiles, getFilesToSyncFromWorkspace, } from './helpers/helpers';
+import { FsTreeProvider, } from './fs-tree/fs-tree';
+import { APP_NAME, FsTreeElement, FilePairArray, FolderPairArray, FilePairMap } from './types/types';
+import { handleOnDidSaveTextDocument } from './event-handlers/handle-save-doc';
+import { handleDidCreateFiles } from './event-handlers/handle-create-file';
 
 // TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
 
