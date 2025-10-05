@@ -4,6 +4,24 @@
   "displayName": "foldersync",
   "description": "Syncs files between folders based on configuration files.",
   "version": "0.0.1",
+  "icon": "resources/icons/filesync2.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fedeholc/temp-filesync.git"
+  },
+  "homepage": "https://github.com/fedeholc/temp-filesync#readme",
+  "bugs": {
+    "url": "https://github.com/fedeholc/temp-filesync/issues"
+  },
+  "keywords": [
+    "sync",
+    "folder",
+    "files",
+    "mirror",
+    "synchronization",
+    "file-sync",
+    "bidirectional"
+  ],
   "engines": {
     "vscode": "^1.103.0"
   },
