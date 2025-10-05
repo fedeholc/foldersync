@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.output = exports.fsTreeProvider = exports.fsTree = exports.allFilesToSync = void 0;
+exports.output = exports.fsTreeProvider = exports.allFilesToSync = exports.fsTree = void 0;
 exports.activate = activate;
 exports.deactivate = deactivate;
 exports.runStartupTasks = runStartupTasks;
@@ -41,22 +41,21 @@ const vscode = __importStar(require("vscode"));
 const helpers_1 = require("./helpers");
 const syncTree_1 = require("./syncTree");
 const types_1 = require("./types");
-exports.allFilesToSync = new Map();
 exports.fsTree = [];
-exports.fsTreeProvider = null;
+exports.allFilesToSync = new Map();
+exports.fsTreeProvider = new syncTree_1.FsTreeProvider(exports.fsTree);
 exports.output = vscode.window.createOutputChannel(types_1.APP_NAME);
 async function activate(context) {
     exports.output.appendLine('foldersync extension activated');
     context.subscriptions.push(exports.output);
     // Run startup tasks immediately when extension activates
-    await runStartupTasks(exports.output);
+    await runStartupTasks();
     // Register tree view provider and create a TreeView so we can react to visibility changes
-    exports.fsTreeProvider = new syncTree_1.FsTreeProvider(exports.fsTree);
     const treeView = vscode.window.createTreeView('foldersync.syncView', { treeDataProvider: exports.fsTreeProvider });
     context.subscriptions.push(treeView);
     // Register command to refresh the tree view
     context.subscriptions.push(vscode.commands.registerCommand('foldersync.refreshView', async () => {
-        await runStartupTasks(exports.output);
+        await runStartupTasks();
         exports.fsTreeProvider?.refresh();
     }));
     // Register command to open the foldersync tree view
@@ -75,18 +74,19 @@ async function activate(context) {
 }
 // This method is called when your extension is deactivated
 function deactivate() { }
-async function runStartupTasks(output) {
-    output.appendLine('Running startup tasks...');
-    const { allFilesToSync: filesFromWorkspace, fsTree: workspaceFsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)(output);
+async function runStartupTasks() {
+    exports.output.appendLine('Running startup tasks...');
+    const { allFilesToSync: filesFromWorkspace, fsTree: workspaceFsTree } = await (0, helpers_1.getFilesToSyncFromWorkspaceSettings)();
+    exports.fsTree = [];
     if (workspaceFsTree) {
         exports.fsTree.push(workspaceFsTree);
     }
-    const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)(output);
+    const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await (0, helpers_1.getFilesToSyncFromConfigFiles)();
     if (configFsTree) {
         exports.fsTree.push(configFsTree);
     }
     exports.allFilesToSync = new Map([...filesFromWorkspace, ...filesFromConfig]);
-    output.appendLine(`Total files to sync: ${exports.allFilesToSync.size}`);
+    exports.output.appendLine(`Total files to sync: ${exports.allFilesToSync.size}`);
     exports.fsTreeProvider?.setTree(exports.fsTree);
 }
 //# sourceMappingURL=extension.js.map

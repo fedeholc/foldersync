@@ -46,7 +46,7 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
   // if saved file is a config file or workspace file, re-run startup tasks
   if (documentPath.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || documentPath.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`) || documentPath.endsWith('.code-workspace')) {
     output.appendLine('Detected save of a config file or workspace settings file. Re-running startup tasks...');
-    await runStartupTasks(output);
+    await runStartupTasks();
 
   }
 }
@@ -172,7 +172,7 @@ function getAbsoluteFilePath(
  * are normalized against the workspace file location.
  * @returns The list of files to sync from the workspace settings, or null if none found.
  */
-export async function getFilesToSyncFromWorkspaceSettings(output: vscode.OutputChannel): Promise<{ allFilesToSync: FilePairMap, fsTree: FsTreeElement | null }> {
+export async function getFilesToSyncFromWorkspaceSettings(): Promise<{ allFilesToSync: FilePairMap, fsTree: FsTreeElement | null }> {
 
   output.appendLine('Retrieving files to sync from workspace settings');
 
@@ -278,7 +278,7 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderP
  * @param output Output channel for logging
  * @returns A promise that resolves to the list of files to sync, or null if none found
  */
-export async function getFilesToSyncFromConfigFiles(output: vscode.OutputChannel): Promise<{ allFilesToSync: FilePairMap, fsTree: FsTreeElement | null }> {
+export async function getFilesToSyncFromConfigFiles(): Promise<{ allFilesToSync: FilePairMap, fsTree: FsTreeElement | null }> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
 
   if (!workspaceFolders || workspaceFolders.length === 0) {
@@ -347,7 +347,7 @@ export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
   // Check if any of the created files is a config file
   if (event.files.some(file => file.path.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || file.path.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`))) {
     output.appendLine('Detected creation of a new config file. Re-running startup tasks...');
-    await runStartupTasks(output);
+    await runStartupTasks();
 
 
   }
@@ -355,7 +355,7 @@ export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
   // Check if any of the created files is a workspace settings file
   if (event.files.some(file => file.path.endsWith('.code-workspace'))) {
     output.appendLine('Detected creation of a new workspace settings file. Re-running startup tasks...');
-    await runStartupTasks(output);
+    await runStartupTasks();
 
 
   }
@@ -364,7 +364,7 @@ export async function handleDidCreateFiles(event: vscode.FileCreateEvent) {
   const foldersToSync = Array.from(allFilesToSync).map(pair => pair[0].substring(0, pair[0].lastIndexOf('/')));
   if (event.files.some(file => foldersToSync.some(folder => file.path.startsWith(folder)))) {
     output.appendLine('Detected creation of a new file in a synced folder. Re-running startup tasks...');
-    await runStartupTasks(output);
+    await runStartupTasks();
 
 
   }

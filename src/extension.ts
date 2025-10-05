@@ -6,9 +6,10 @@ import { APP_NAME, FsTreeElement, FilePairArray } from './types';
 // TODO probar usar un Map en lugar de un array para allFilesToSync para evitar duplicados y para mejorar performance en búsquedas
 
 export type FilePairMap = Map<string, string>;
-export let allFilesToSync: FilePairMap = new Map();
+
 export let fsTree: FsTreeElement[] = [];
-export let fsTreeProvider: FsTreeProvider | null = null;
+export let allFilesToSync: FilePairMap = new Map();
+export let fsTreeProvider: FsTreeProvider = new FsTreeProvider(fsTree);
 
 
 export const output = vscode.window.createOutputChannel(APP_NAME);
@@ -19,17 +20,16 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(output);
 
 	// Run startup tasks immediately when extension activates
-	await runStartupTasks(output);
+	await runStartupTasks();
 
 	// Register tree view provider and create a TreeView so we can react to visibility changes
 
-	fsTreeProvider = new FsTreeProvider(fsTree);
 	const treeView = vscode.window.createTreeView('foldersync.syncView', { treeDataProvider: fsTreeProvider });
 	context.subscriptions.push(treeView);
 
 	// Register command to refresh the tree view
 	context.subscriptions.push(vscode.commands.registerCommand('foldersync.refreshView', async () => {
-		await runStartupTasks(output);
+		await runStartupTasks();
 		fsTreeProvider?.refresh();
 	}));
 
@@ -57,18 +57,18 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate() { }
 
 
-export async function runStartupTasks(output: vscode.OutputChannel) {
+export async function runStartupTasks() {
 
 	output.appendLine('Running startup tasks...');
-	const { allFilesToSync: filesFromWorkspace, fsTree: workspaceFsTree } = await getFilesToSyncFromWorkspaceSettings(output);
+	const { allFilesToSync: filesFromWorkspace, fsTree: workspaceFsTree } = await getFilesToSyncFromWorkspaceSettings( );
 
-
+	fsTree = [];
 
 	if (workspaceFsTree) {
 		fsTree.push(workspaceFsTree);
 	}
 
-	const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles(output);
+	const { allFilesToSync: filesFromConfig, fsTree: configFsTree } = await getFilesToSyncFromConfigFiles();
 
 
 	if (configFsTree) {
