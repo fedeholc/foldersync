@@ -1,55 +1,70 @@
-# folder-sync README
+# FolderSync
 
-This is the `folder-sync` extension for Visual Studio Code. It allows you to synchronize files between different folders based on your configuration.
+FolderSync is a Visual Studio Code extension that synchronizes files between folders. It's designed to help you keep the content of two folders in sync, which is useful for a variety of development workflows, such as:
+
+- Working with build processes where you need to copy files from a source to a destination folder.
+- Synchronizing configuration files between different projects.
+- When you need to share files between two repos, but don't want to use submodules or symlinks or publish a package.
 
 ## Features
 
+- **Folder Synchronization**: Synchronize the content of two folders. The first synchronization is unidirectional, from source to destination, then it is bidirectional based on the last modification time of the files.
+- **Automatic Synchronization**: Automatically synchronizes files when you save them or when you create new files.
+- **Flexible Configuration**: Configure the folders to sync through the VS Code workspace settings or using a `foldersync.config.json` configuration file.
+- **Tree View**: A dedicated view in the activity bar to visualize the synchronized folders and files.
+- **Commands**:
+  - `foldersync.refreshView`: Manually refresh the synchronized folders view.
+  - `foldersync.openView`: Open the FolderSync view.
+
 ## Extension Settings
 
-Un archivo `foldersync.config.json` que tenga esta forma:
+FolderSync can be configured in two ways:
+
+### 1. Workspace Settings
+
+You can configure FolderSync by adding the `foldersync.folders` setting to your workspace configuration file (`.code-workspace`). This setting is an array of folder pairs to synchronize.
+
+**Example:**
 
 ```json
 {
-  "foldersync": [
-    ["./back/types", "./front/types"],
-    ["./a", "./b"]
+  "settings": {
+    "foldersync.folders": [
+      ["/path/to/your/source/folder", "/path/to/your/destination/folder"],
+      ["/another/source/folder", "/another/destination/folder"]
+    ]
+  }
+}
+```
+
+### 2. `foldersync.config.json` Configuration File
+
+You can also configure FolderSync by creating a `foldersync.config.json` file in the root of your workspace folder. This file should contain a JSON object with a `folders` property, which is an array of folder pairs to synchronize.
+
+Paths in the `foldersync.config.json` file can be absolute or relative to the location of the file.
+
+**Example `foldersync.config.json`:**
+
+```json
+{
+  "folders": [
+    ["./source", "./destination"],
+    ["/path/to/another/source", "/path/to/another/destination"]
   ]
 }
 ```
 
-O en el workspace (`.code-workspace`), dentro de su sección settings :
+## Usage
 
-```json
-	"settings": {
-    "foldersync.folderPairs": [
-      ["./back/types", "./front/types"],
-      ["./a", "./b"]
-    ]
-  },
-```
+1.  Install the FolderSync extension.
+2.  Configure the folders you want to synchronize using either the workspace settings or a `sync.json` file as described above.
+3.  Open the FolderSync view from the activity bar to see the synchronized folders.
+4.  When you create, modify, or delete a file in one of the synchronized folders, the changes will be automatically reflected in the other folder.
 
-o también se puede escribir así:
+## Contributing
 
-```json
-  "settings": {
-    "foldersync": {
-      "globalEnabled": true,
-      "folderPairs": [
-        ["./back/types", "./front/types"],
-        ["./a", "./b"]
-      ]
-    },
-  }
-```
-
-## Release Notes
-
-### 0.0.1
-
-Initial release of `folder-sync` extension.
-
-For more information, please refer to the [CHANGELOG.md](CHANGELOG.md) file.
+If you find any issues or have suggestions for improvements, please feel free to open an issue or submit a pull request on the [GitHub repository](https://github.com/fedeholc/foldersync).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This extension is licensed under the [MIT License](LICENSE).
