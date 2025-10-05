@@ -3,7 +3,7 @@
   "publisher": "fedeholc",
   "displayName": "foldersync",
   "description": "Syncs files between folders based on configuration files.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "icon": "resources/icons/foldersync.png",
   "repository": {
     "type": "git",
