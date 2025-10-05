@@ -12,6 +12,12 @@ FolderSync is a Visual Studio Code extension that synchronizes files between fol
   - `foldersync.refreshView`: Manually refresh the synchronized folders view.
   - `foldersync.openView`: Open the FolderSync view.
 
+## Warnings
+
+The first time you synchronize two folders, all files from the source folder will be copied to the destination folder without any confirmation. If there are files in the destination folder with the same name, they will be overwritten. If there are files in the destination folder that do not exist in the source folder, they will be copied to the source folder.
+
+Please ensure that you have backups of any important data before using this extension. Use git so you can revert any unwanted changes.
+
 ## Extension Settings
 
 FolderSync can be configured in two ways:

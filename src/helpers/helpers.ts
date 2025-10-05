@@ -174,38 +174,40 @@ export async function getFilesToSyncFromWorkspace(): Promise<{ filesMap: FilePai
 async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderPairArray, output: vscode.OutputChannel) {
   const normalizedFiles: FilePairMap = new Map();
   const fsTree: FsTreeElement[] = [];
+
   for (const [folderA, folderB] of normalizedFolders) {
     try {
-      const filesInA = await fs.promises.readdir(folderA);
-      for (const fileName of filesInA) {
-        const fileSource = path.join(folderA, fileName);
-        const fileDest = path.join(folderB, fileName);
-        // Check if it's a file (not a directory)
-        const stat = await fs.promises.stat(fileSource);
-        if (stat.isFile()) {
-          normalizedFiles.set(fileSource, fileDest);
-          normalizedFiles.set(fileDest, fileSource);
-        }
+      // Recursively collect relative file paths for both folders
+      const relFilesA = await listRelativeFiles(folderA, output);
+      const relFilesB = await listRelativeFiles(folderB, output);
+
+      // Union of relative paths
+      const allRelPaths = new Set<string>([...relFilesA, ...relFilesB]);
+
+      // Build mappings (both directions) for each relative path
+      for (const rel of allRelPaths) {
+        const fullA = path.join(folderA, rel);
+        const fullB = path.join(folderB, rel);
+
+        // Determine if at least one side is a regular file
+        const aIsFile = await isFile(fullA);
+        const bIsFile = await isFile(fullB);
+        if (!aIsFile && !bIsFile) { continue; }
+
+        // Set pairing even if one side doesn't yet exist (so first save creates counterpart)
+        normalizedFiles.set(fullA, fullB);
+        normalizedFiles.set(fullB, fullA);
       }
-      const filesInB = await fs.promises.readdir(folderB);
-      for (const fileName of filesInB) {
-        const fileSource = path.join(folderA, fileName);
-        const fileDest = path.join(folderB, fileName);
-        // Check if it's a file (not a directory)
-        const stat = await fs.promises.stat(fileDest);
-        if (stat.isFile()) {
 
-          normalizedFiles.set(fileSource, fileDest);
-          normalizedFiles.set(fileDest, fileSource);
+      // Build children list for tree (forward direction only to avoid duplicates)
+      const children: FsTreeElement[] = Array.from(allRelPaths)
+        .map(rel => {
+          const aPath = path.join(folderA, rel);
+          const bPath = path.join(folderB, rel);
+          // Only show if the forward mapping exists (it will) and at least one side is file
+          return { name: `${rel} <-> ${rel}`, type: 'pair' as const };
+        });
 
-        }
-
-      }
-      // Add to fsTree
-      const children: FsTreeElement[] = Array.from(normalizedFiles.entries())
-        .filter(([key, value]) => key.startsWith(folderA) && value.startsWith(folderB)) //to avoid showing the same pair twice in the treeview
-        .map(([key, value]) => ({ name: `${path.basename(key)} <-> ${path.basename(value)}`, type: 'pair' }));
-      // if children is empty, add a placeholder
       if (children.length === 0) {
         children.push({ name: '(empty)', type: 'pair' });
       }
@@ -218,7 +220,6 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderP
       fsTree.push(folderTreeElement);
     } catch (err) {
       output.appendLine(`Error reading folder ${folderA}: ${err}`);
-      // Add an error element to the fsTree
       const errorElement: FsTreeElement = {
         name: `Error reading folder(s)`,
         type: 'pair'
@@ -232,6 +233,53 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderP
     }
   }
   return { normalizedFiles: normalizedFiles, fsTree };
+}
+
+/**
+ * Recursively list all files under a root folder returning their relative paths.
+ * If the folder does not exist, returns an empty set.
+ */
+async function listRelativeFiles(root: string, output: vscode.OutputChannel): Promise<Set<string>> {
+  const results = new Set<string>();
+  async function walk(current: string) {
+    let entries: string[] = [];
+    try {
+      entries = await fs.promises.readdir(current);
+    } catch (err) {
+      // Folder may not exist yet; treat as empty
+      return;
+    }
+    for (const entry of entries) {
+      const abs = path.join(current, entry);
+      let stat: fs.Stats;
+      try {
+        stat = await fs.promises.stat(abs);
+      } catch (err) {
+        continue; // skip unreadable
+      }
+      if (stat.isDirectory()) {
+        await walk(abs);
+      } else if (stat.isFile()) {
+        const rel = path.relative(root, abs) || entry;
+        // Normalize separators to forward slash for consistency in tree display
+        results.add(rel.split(path.sep).join('/'));
+      }
+    }
+  }
+  await walk(root);
+  return results;
+}
+
+/**
+ * Checks whether a path exists and is a regular file.
+ */
+async function isFile(p: string): Promise<boolean> {
+  try {
+    const st = await fs.promises.stat(p);
+    return st.isFile();
+  } catch {
+    return false;
+  }
 }
 
 

@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { output, runStartupTasks } from "../extension";
 import { DEFAULT_CONFIG_FILE_NAME } from "../types/types";
 import { filesEqualByHash } from '../helpers/helpers';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 
 /**
  * Handles the event when a text document is saved. If the saved document is
@@ -43,7 +45,15 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
   const isSameHash = await filesEqualByHash(fileSrc, fileDest);
 
   if (!isSameHash) {
-    //Use the documentPath as source, the other as destination
+    // Ensure destination directory exists (recursive create if needed)
+    try {
+      const destDir = path.dirname(fileDest);
+      await fs.promises.mkdir(destDir, { recursive: true });
+    } catch (mkdirErr) {
+      output.appendLine(`Failed creating destination directory for ${fileDest}: ${mkdirErr}`);
+    }
+
+    // Use the documentPath as source, the other as destination
     try {
       await vscode.workspace.fs.copy(vscode.Uri.file(fileSrc), vscode.Uri.file(fileDest), { overwrite: true });
       output.appendLine(`Synchronized ${fileSrc} -> ${fileDest}`);
