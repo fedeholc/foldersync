@@ -48,7 +48,7 @@ export async function initialSyncLatest(allFilesToSync: Map<string, string>): Pr
         // Only one exists -> copy that one over
         if (aStat && !bStat) {
           const bDir = path.dirname(b);
-          const bDirExists = await fs.promises.stat(bDir).then(s=>s.isDirectory()).catch(()=>false);
+          const bDirExists = await fs.promises.stat(bDir).then(s => s.isDirectory()).catch(() => false);
           if (!bDirExists) {
             output.appendLine(`[initialSync] Skipped creating missing directory for ${b} (dir absent).`);
           } else {
@@ -60,7 +60,7 @@ export async function initialSyncLatest(allFilesToSync: Map<string, string>): Pr
         }
         if (!aStat && bStat) {
           const aDir = path.dirname(a);
-          const aDirExists = await fs.promises.stat(aDir).then(s=>s.isDirectory()).catch(()=>false);
+          const aDirExists = await fs.promises.stat(aDir).then(s => s.isDirectory()).catch(() => false);
           if (!aDirExists) {
             output.appendLine(`[initialSync] Skipped creating missing directory for ${a} (dir absent).`);
           } else {
@@ -88,7 +88,7 @@ export async function initialSyncLatest(allFilesToSync: Map<string, string>): Pr
           }
           if (shouldCopy) {
             const olderDir = path.dirname(older);
-            const olderDirExists = await fs.promises.stat(olderDir).then(s=>s.isDirectory()).catch(()=>false);
+            const olderDirExists = await fs.promises.stat(olderDir).then(s => s.isDirectory()).catch(() => false);
             if (!olderDirExists) {
               output.appendLine(`[initialSync] Skipped copy; target dir missing (${olderDir}).`);
             } else {
