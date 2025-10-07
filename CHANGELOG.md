@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 
 - Tests covering: skipping sync when destination folder is absent; skipping initial sync operations where target directories are missing.
 - Documentation updates: README section on Folder Validation Behavior and adjusted Initial Sync rules.
+- Toast notifications on sync success or error during save operations.
 
 ### Removed
 

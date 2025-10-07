@@ -24,6 +24,10 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
   // if saved file is a config file or workspace file, re-run startup tasks
   if (documentPath.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || documentPath.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`) || documentPath.endsWith('.code-workspace')) {
     output.appendLine('Detected save of a config file or workspace settings file. Re-running startup tasks...');
+    // If it's a workspace file, VS Code may still be writing settings; add small delay
+    if (documentPath.endsWith('.code-workspace')) {
+      await new Promise(r => setTimeout(r, 150));
+    }
     await runStartupTasks();
     // runStartupTasks already updated provider; force an explicit refresh in case of identical references
     fsTreeProvider?.refresh();
@@ -79,16 +83,19 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
         await vscode.workspace.applyEdit(edit);
         await openDestDoc.save();
         output.appendLine(`Synchronized (open document) ${fileSrc} -> ${fileDest}`);
+        vscode.window.showInformationMessage(`foldersync: Synchronized ${path.basename(fileSrc)} -> ${path.basename(fileDest)}`);
       } else {
         // If file is not open, use file system copy
         await vscode.workspace.fs.copy(vscode.Uri.file(fileSrc), destUri, { overwrite: true });
         output.appendLine(`Synchronized ${fileSrc} -> ${fileDest}`);
+        vscode.window.showInformationMessage(`foldersync: Synchronized ${path.basename(fileSrc)} -> ${path.basename(fileDest)}`);
       }
 
       const fileName = path.basename(fileSrc);
       flashSyncMessage(`Synced ${fileName}`);
     } catch (err) {
       output.appendLine(`Error synchronizing ${fileSrc} -> ${fileDest}: ${err}`);
+      vscode.window.showInformationMessage(`foldersync: Error synchronizing ${path.basename(fileSrc)} -> ${path.basename(fileDest)}`);
     }
   } else {
     output.appendLine(`Files are identical by hash. No action taken for ${fileSrc} -> ${fileDest}`);
