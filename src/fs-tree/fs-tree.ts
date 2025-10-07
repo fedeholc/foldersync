@@ -17,6 +17,10 @@ class FsTreeItem extends vscode.TreeItem {
         : item.type === "container" ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None
     );
     this.contextValue = item.type;
+    // Provide a stable id so VS Code can properly diff and update labels after configuration changes.
+    // If names change (e.g. folder pair renamed) we want VS Code to treat it as a different element.
+    // Using type + name is sufficient given the current data model (names are unique per level in our tree construction).
+    this.id = `${item.type}:${item.name}`;
     // set a ThemeIcon depending on the element type so items show icons in the tree
     if (item.type === 'container') {
       this.iconPath = new vscode.ThemeIcon('gear');
@@ -48,18 +52,22 @@ export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
 
 
   private _myTree: FsTreeElement[] = [];
+  private _version = 0; // bump to help VS Code identify change cycles
 
   constructor(initialTree: FsTreeElement[] = []) {
     this.setTree(initialTree);
   }
 
   setTree(tree: FsTreeElement[]) {
-    this._myTree = tree;
+    // Always clone to ensure reference changes (avoids shallow equality optimizations in VS Code)
+    this._myTree = [...tree];
+    this._version++;
     this.refresh();
   }
 
-  refresh(): void {
-    this._onDidChangeTreeData.fire();
+  refresh(element?: FsTreeItem): void {
+    // Passing undefined explicitly signals a full refresh; VS Code will re-query getChildren
+    this._onDidChangeTreeData.fire(element);
   }
 
   getChildren(element?: FsTreeItem): Thenable<FsTreeItem[]> {
@@ -85,5 +93,11 @@ export class FsTreeProvider implements vscode.TreeDataProvider<FsTreeItem> {
     }
     // Files have no children
     return Promise.resolve([]);
+  }
+
+  // Optional getParent implementation (not strictly needed but can help with granular refresh logic later)
+  getParent?(element: FsTreeItem): vscode.ProviderResult<FsTreeItem> {
+    // Our data model currently does not track parent references; implement if needed later.
+    return null;
   }
 }

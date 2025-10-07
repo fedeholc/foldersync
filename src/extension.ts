@@ -42,6 +42,15 @@ export async function activate(context: vscode.ExtensionContext) {
 		fsTreeProvider?.refresh();
 	}));
 
+	// Listen to configuration changes for our namespace and refresh automatically
+	/* 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(async (e) => {
+			if (e.affectsConfiguration(APP_NAME)) {
+				output.appendLine('Configuration changed (onDidChangeConfiguration). Re-running startup tasks...');
+				await runStartupTasks();
+				fsTreeProvider?.setTree(fsTree);
+			}
+		})); */
+
 	// Register command to open the foldersync tree view
 	context.subscriptions.push(vscode.commands.registerCommand('foldersync.openView', () => {
 		// Open the view container registered in package.json (id: foldersync_container)

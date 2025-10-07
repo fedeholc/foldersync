@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { output, runStartupTasks } from "../extension";
+import { output, runStartupTasks, fsTreeProvider, fsTree } from "../extension";
 import { DEFAULT_CONFIG_FILE_NAME } from "../types/types";
 import { filesEqualByHash } from '../helpers/helpers';
 import * as path from 'node:path';
@@ -25,6 +25,8 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
   if (documentPath.endsWith(`/${DEFAULT_CONFIG_FILE_NAME}`) || documentPath.endsWith(`\\${DEFAULT_CONFIG_FILE_NAME}`) || documentPath.endsWith('.code-workspace')) {
     output.appendLine('Detected save of a config file or workspace settings file. Re-running startup tasks...');
     await runStartupTasks();
+    // runStartupTasks already updated provider; force an explicit refresh in case of identical references
+    fsTreeProvider?.refresh();
     return;
   }
 
@@ -91,4 +93,5 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
   } else {
     output.appendLine(`Files are identical by hash. No action taken for ${fileSrc} -> ${fileDest}`);
   }
+
 }
