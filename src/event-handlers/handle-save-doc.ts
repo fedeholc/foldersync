@@ -46,12 +46,17 @@ export async function handleOnDidSaveTextDocument(document: vscode.TextDocument,
   const isSameHash = await filesEqualByHash(fileSrc, fileDest);
 
   if (!isSameHash) {
-    // Ensure destination directory exists (recursive create if needed)
+    // Destination directory should already exist; if not, report and skip to avoid creating unintended structure
+    const destDir = path.dirname(fileDest);
     try {
-      const destDir = path.dirname(fileDest);
-      await fs.promises.mkdir(destDir, { recursive: true });
-    } catch (mkdirErr) {
-      output.appendLine(`Failed creating destination directory for ${fileDest}: ${mkdirErr}`);
+      const stat = await fs.promises.stat(destDir);
+      if (!stat.isDirectory()) {
+        output.appendLine(`Destination directory is not a directory: ${destDir}. Skipping sync.`);
+        return;
+      }
+    } catch (err) {
+      output.appendLine(`Destination directory missing (${destDir}). Skipping sync to avoid silent creation.`);
+      return;
     }
 
     // Use the documentPath as source, the other as destination

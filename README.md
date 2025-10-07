@@ -86,12 +86,13 @@ If you start tracking folders that already contain divergent versions of the sam
 
 Behavior per logical pair (fileA, fileB):
 
-- Only one exists: it is copied to create the missing counterpart.
+- Only one exists and the counterpart's directory already exists: it is copied to create the missing counterpart.
+- Only one exists and the counterpart's parent directory is missing: skipped (no directories are auto-created).
 - Both exist with different modified times: the newer (by mtime) overwrites the older.
 - Both exist with (roughly) identical mtimes (difference < ~5ms): skipped to avoid unnecessary churn.
 - Copy operations ensure destination directories exist.
 
-This command does not delete anything nor attempts merge/conflict resolution; it simply enforces "newest timestamp wins".
+This command does not delete anything nor attempts merge/conflict resolution; it simply enforces "newest timestamp wins" and skips operations that would require creating missing directories.
 
 ### How It Works (Internals)
 
@@ -106,6 +107,16 @@ This command does not delete anything nor attempts merge/conflict resolution; it
 - Save: Source overwrites destination if hashes differ.
 - Rename: Counterpart is renamed; existing file with same name is replaced.
 - Delete: Counterpart removed if it exists (no trash usage currently).
+
+### Folder Validation Behavior (Changed)
+
+Previously, if one side of a configured folder pair did not exist yet, the extension would silently create folders on first sync (when saving a file) and proceed. This could hide typos in configuration (e.g. a misspelled destination path). Now, if either folder in a pair does not exist at activation/refresh time, that pair is marked as invalid:
+
+- It appears in the tree with an error state.
+- An error message is shown summarizing how many pairs are invalid.
+- No files will be synchronized for that pair until both folders exist.
+
+Create (or correct) the missing directory and run the command `foldersync.refreshView` to re-validate.
 
 ### Limitations
 

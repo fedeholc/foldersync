@@ -177,6 +177,25 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderP
 
   for (const [folderA, folderB] of normalizedFolders) {
     try {
+      // Validate both folders exist; if either is missing, register an error node and skip.
+      const folderAExists = await fs.promises.stat(folderA).then(s => s.isDirectory()).catch(() => false);
+      const folderBExists = await fs.promises.stat(folderB).then(s => s.isDirectory()).catch(() => false);
+
+      if (!folderAExists || !folderBExists) {
+        const missing: string[] = [];
+        if (!folderAExists) { missing.push(folderA); }
+        if (!folderBExists) { missing.push(folderB); }
+        const msg = `Skipping pair. Missing folder(s): ${missing.join(', ')}`;
+        output.appendLine(`[config] ${msg}`);
+        const folderTreeElement: FsTreeElement = {
+          name: (folderA) + ' <-> ' + (folderB),
+          type: 'folder-error',
+          children: [{ name: msg, type: 'pair' }]
+        };
+        fsTree.push(folderTreeElement);
+        continue; // Do not attempt to list / sync this pair
+      }
+
       // Recursively collect relative file paths for both folders
       const relFilesA = await listRelativeFiles(folderA, output);
       const relFilesB = await listRelativeFiles(folderB, output);

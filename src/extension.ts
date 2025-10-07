@@ -91,6 +91,7 @@ export function deactivate() { }
 export async function runStartupTasks() {
 
 	output.appendLine('Running startup tasks...');
+	const invalidPairs: string[] = [];
 	const { filesMap: filesFromWorkspace, fsTree: workspaceFsTree } = await getFilesToSyncFromWorkspace();
 
 	fsTree = [];
@@ -108,5 +109,21 @@ export async function runStartupTasks() {
 	allFilesToSync = new Map<string, string>([...filesFromWorkspace, ...filesFromConfig]);
 	output.appendLine(`Total files to sync: ${allFilesToSync.size}`);
 	fsTreeProvider?.setTree(fsTree);
+
+	// Scan fsTree for folder-error nodes to build a user-facing error list
+	const collectErrors = (nodes: import('./types/types').FsTreeElement[]) => {
+		for (const n of nodes) {
+			if (n.type === 'folder-error') {
+				invalidPairs.push(n.name);
+			}
+			if (n.children) { collectErrors(n.children); }
+		}
+	};
+	collectErrors(fsTree);
+	if (invalidPairs.length > 0) {
+		const msg = `foldersync: ${invalidPairs.length} folder pair(s) invalid (missing directory). See output for details.`;
+		output.appendLine(msg);
+		vscode.window.showErrorMessage(msg);
+	}
 }
 

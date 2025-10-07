@@ -47,17 +47,27 @@ export async function initialSyncLatest(allFilesToSync: Map<string, string>): Pr
 
         // Only one exists -> copy that one over
         if (aStat && !bStat) {
-          await ensureDir(path.dirname(b));
-          await vscode.workspace.fs.copy(vscode.Uri.file(a), vscode.Uri.file(b), { overwrite: true });
-          output.appendLine(`[initialSync] Copied (only A existed) ${a} -> ${b}`);
-          copiedCount++;
+          const bDir = path.dirname(b);
+          const bDirExists = await fs.promises.stat(bDir).then(s=>s.isDirectory()).catch(()=>false);
+          if (!bDirExists) {
+            output.appendLine(`[initialSync] Skipped creating missing directory for ${b} (dir absent).`);
+          } else {
+            await vscode.workspace.fs.copy(vscode.Uri.file(a), vscode.Uri.file(b), { overwrite: true });
+            output.appendLine(`[initialSync] Copied (only A existed) ${a} -> ${b}`);
+            copiedCount++;
+          }
           continue;
         }
         if (!aStat && bStat) {
-          await ensureDir(path.dirname(a));
-          await vscode.workspace.fs.copy(vscode.Uri.file(b), vscode.Uri.file(a), { overwrite: true });
-          output.appendLine(`[initialSync] Copied (only B existed) ${b} -> ${a}`);
-          copiedCount++;
+          const aDir = path.dirname(a);
+          const aDirExists = await fs.promises.stat(aDir).then(s=>s.isDirectory()).catch(()=>false);
+          if (!aDirExists) {
+            output.appendLine(`[initialSync] Skipped creating missing directory for ${a} (dir absent).`);
+          } else {
+            await vscode.workspace.fs.copy(vscode.Uri.file(b), vscode.Uri.file(a), { overwrite: true });
+            output.appendLine(`[initialSync] Copied (only B existed) ${b} -> ${a}`);
+            copiedCount++;
+          }
           continue;
         }
 
@@ -77,10 +87,15 @@ export async function initialSyncLatest(allFilesToSync: Map<string, string>): Pr
             shouldCopy = true;
           }
           if (shouldCopy) {
-            await ensureDir(path.dirname(older));
-            await vscode.workspace.fs.copy(vscode.Uri.file(newer), vscode.Uri.file(older), { overwrite: true });
-            output.appendLine(`[initialSync] Copied newer ${newer} -> ${older}`);
-            copiedCount++;
+            const olderDir = path.dirname(older);
+            const olderDirExists = await fs.promises.stat(olderDir).then(s=>s.isDirectory()).catch(()=>false);
+            if (!olderDirExists) {
+              output.appendLine(`[initialSync] Skipped copy; target dir missing (${olderDir}).`);
+            } else {
+              await vscode.workspace.fs.copy(vscode.Uri.file(newer), vscode.Uri.file(older), { overwrite: true });
+              output.appendLine(`[initialSync] Copied newer ${newer} -> ${older}`);
+              copiedCount++;
+            }
           }
         }
       } catch (err: any) {

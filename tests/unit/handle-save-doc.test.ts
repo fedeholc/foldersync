@@ -99,9 +99,9 @@ suite('Handle Save Document Test Suite', () => {
     assert.strictEqual(initialMtime.getTime(), finalMtime.getTime());
   });
 
-  test('should create destination directory if it does not exist', async () => {
+  test('should NOT create destination directory if it does not exist', async () => {
     const srcPath = path.join(tempDir, 'source.txt');
-    const destDir = path.join(tempDir, 'new', 'nested', 'dir');
+    const destDir = path.join(tempDir, 'new', 'nested', 'dir'); // do NOT create
     const destPath = path.join(destDir, 'destination.txt');
 
     fs.writeFileSync(srcPath, 'source content');
@@ -112,10 +112,22 @@ suite('Handle Save Document Test Suite', () => {
 
     await handleOnDidSaveTextDocument(doc, syncMap);
 
-    // Verify directory was created and file was copied
-    assert.ok(fs.existsSync(destDir));
-    assert.ok(fs.existsSync(destPath));
-    const destContent = fs.readFileSync(destPath, 'utf-8');
-    assert.strictEqual(destContent, 'source content');
+    // Destination directory should NOT be created anymore
+    assert.ok(!fs.existsSync(destDir), 'Destination dir should not be auto-created');
+    assert.ok(!fs.existsSync(destPath), 'Destination file should not be created when directory missing');
+  });
+
+  test('should skip sync when destination directory missing', async () => {
+    const srcPath = path.join(tempDir, 'src2.txt');
+    const destDir = path.join(tempDir, 'missingDir');
+    const destPath = path.join(destDir, 'dest2.txt');
+
+    fs.writeFileSync(srcPath, 'abc');
+    const doc = await vscode.workspace.openTextDocument(srcPath);
+    const syncMap = new Map<string, string>();
+    syncMap.set(srcPath, destPath);
+    await handleOnDidSaveTextDocument(doc, syncMap);
+    assert.ok(!fs.existsSync(destDir));
+    assert.ok(!fs.existsSync(destPath));
   });
 });
