@@ -171,7 +171,7 @@ export async function getFilesToSyncFromWorkspace(): Promise<{ filesMap: FilePai
  * @param output Output channel for logging 
  * @returns An object containing the map of file pairs to sync and the corresponding fsTree structure 
  */
-async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderPairArray, output: vscode.OutputChannel) {
+export async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderPairArray, output: vscode.OutputChannel) {
   const normalizedFiles: FilePairMap = new Map();
   const fsTree: FsTreeElement[] = [];
 
@@ -219,12 +219,16 @@ async function getNormalizedFilesAndFsTreeFromFolders(normalizedFolders: FolderP
       }
 
       // Build children list for tree (forward direction only to avoid duplicates)
+      // Assign explicit ids to pair elements to avoid collisions when the same relative path
+      // appears under different folder pairs (e.g., index.ts in two different pairs).
       const children: FsTreeElement[] = Array.from(allRelPaths)
         .map(rel => {
           const aPath = path.join(folderA, rel);
           const bPath = path.join(folderB, rel);
-          // Only show if the forward mapping exists (it will) and at least one side is file
-          return { name: `${rel} <-> ${rel}`, type: 'pair' as const };
+          // Use a compact id that includes both folder pair identifiers and the relative path
+          const safeFolderId = `${folderA}<->${folderB}`;
+          const childId = `pair:${safeFolderId}:${rel}`;
+          return { name: `${rel} <-> ${rel}`, type: 'pair' as const, id: childId };
         });
 
       if (children.length === 0) {

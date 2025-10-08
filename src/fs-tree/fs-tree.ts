@@ -20,7 +20,8 @@ class FsTreeItem extends vscode.TreeItem {
     // Provide a stable id so VS Code can properly diff and update labels after configuration changes.
     // If names change (e.g. folder pair renamed) we want VS Code to treat it as a different element.
     // Using type + name is sufficient given the current data model (names are unique per level in our tree construction).
-    this.id = `${item.type}:${item.name}`;
+    // Prefer an explicit id on the model if present (helps avoid collisions when same name appears under different parents)
+    this.id = item.id ? item.id : `${item.type}:${item.name}`;
     // set a ThemeIcon depending on the element type so items show icons in the tree
     if (item.type === 'container') {
       this.iconPath = new vscode.ThemeIcon('gear');

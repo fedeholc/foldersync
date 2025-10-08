@@ -19,6 +19,8 @@ export type FolderPairArray = [string, string][];
 export type FsTreeElement = {
   name: string;
   type: 'pair' | 'container' | "folder" | 'folder-error';
+  /** Optional stable id for the element to ensure uniqueness across the tree */
+  id?: string;
   children?: FsTreeElement[];
 };
 

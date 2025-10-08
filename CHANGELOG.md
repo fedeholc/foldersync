@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2025-10-08
+
+### Fixed
+
+- Fixed an issue where TreeView elements could attempt to register with duplicate ids when the same relative filename appeared in multiple folder pairs. Tree items now receive stable, unique ids and unit tests were added to guarantee uniqueness.
+
 ## [0.1.0] - 2025-10-07
 
 ### Changed
@@ -21,11 +27,6 @@ All notable changes to this project will be documented in this file.
 ### Removed
 
 - Implicit directory creation behavior during regular saves and initial sync.
-
-### Internal
-
-- Refactored startup to collect and surface invalid folder pairs.
-- Adjusted unit and integration tests (now 53 total) to reflect new non-creation semantics.
 
 ## [0.0.6] - 2025-10-05
 
@@ -57,8 +58,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
-[0.0.6]: https://github.com/fedeholc/foldersync/releases/tag/v0.0.6
+[0.1.1]: https://github.com/fedeholc/foldersync/releases/tag/v0.1.1
+[0.1.0]: https://github.com/fedeholc/foldersync/releases/tag/v0.1.0
 [0.0.7]: https://github.com/fedeholc/foldersync/releases/tag/v0.0.7
+[0.0.6]: https://github.com/fedeholc/foldersync/releases/tag/v0.0.6
 [0.0.5]: https://github.com/fedeholc/foldersync/releases/tag/v0.0.5
 [0.0.4]: https://github.com/fedeholc/foldersync/releases/tag/v0.0.4
 [0.0.1]: https://github.com/fedeholc/foldersync/releases/tag/v0.0.1

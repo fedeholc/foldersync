@@ -120,7 +120,7 @@ export async function runStartupTasks() {
 	fsTreeProvider?.setTree(fsTree);
 
 	// Scan fsTree for folder-error nodes to build a user-facing error list
-	const collectErrors = (nodes: import('./types/types').FsTreeElement[]) => {
+	const collectErrors = (nodes: FsTreeElement[]) => {
 		for (const n of nodes) {
 			if (n.type === 'folder-error') {
 				invalidPairs.push(n.name);
